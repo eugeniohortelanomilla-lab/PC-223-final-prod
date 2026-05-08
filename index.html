@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTU-DB Digital Athenaeum</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/styles.css">
+</head>
+<body>
+
+<!-- ===== LOGIN PAGE ===== -->
+<div id="login-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="6" width="24" height="32" rx="3" fill="#c9a84c" opacity=".18"/>
+        <rect x="10" y="8" width="20" height="28" rx="2" stroke="#c9a84c" stroke-width="1.5" fill="none"/>
+        <line x1="14" y1="15" x2="26" y2="15" stroke="#c9a84c" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="14" y1="20" x2="26" y2="20" stroke="#c9a84c" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="14" y1="25" x2="22" y2="25" stroke="#c9a84c" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M28 28 L36 36" stroke="#e8c97a" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="36" cy="34" r="5" stroke="#e8c97a" stroke-width="1.5" fill="none"/>
+      </svg>
+      <div>
+        <div class="brand-name">Athenaeum</div>
+      </div>
+    </div>
+    <div class="brand-sub">CTU-DB Campus Library</div>
+    <h3>Please sign in to continue</h3>
+    <input class="login-input" type="text" id="l-user" placeholder="Username" onkeydown="if(event.key==='Enter')login()">
+    <input class="login-input" type="password" id="l-pass" placeholder="Password" onkeydown="if(event.key==='Enter')login()">
+    <div class="login-error" id="login-err"></div>
+    <button class="login-btn" onclick="login()">Unlock Library</button>
+    <div class="login-link" onclick="showRegisterPage()">✦ Create Reader Account</div>
+  </div>
+</div>
+
+<!-- ===== REGISTER PAGE ===== -->
+<div id="register-page">
+  <div class="login-box">
+    <div class="login-logo">
+      <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="8" y="6" width="24" height="32" rx="3" fill="#c9a84c" opacity=".18"/>
+        <rect x="10" y="8" width="20" height="28" rx="2" stroke="#c9a84c" stroke-width="1.5" fill="none"/>
+        <line x1="14" y1="15" x2="26" y2="15" stroke="#c9a84c" stroke-width="1.2" stroke-linecap="round"/>
+        <line x1="14" y1="20" x2="26" y2="20" stroke="#c9a84c" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      <div class="brand-name">Register</div>
+    </div>
+    <div class="brand-sub">Create Reader Account</div>
+    <input class="login-input" type="text" id="r-user" placeholder="Username">
+    <input class="login-input" type="password" id="r-pass" placeholder="Password">
+    <input class="login-input" type="text" id="r-name" placeholder="Full Name">
+    <div class="login-error" id="reg-err"></div>
+    <button class="login-btn" onclick="registerAccount()">Create Account</button>
+    <div class="login-link" onclick="showLoginPage()">← Back to Login</div>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div id="app">
+  <!-- Top Nav -->
+  <nav class="topnav">
+    <div class="nav-logo">
+      <svg viewBox="0 0 32 32" fill="none">
+        <rect x="4" y="3" width="16" height="22" rx="2" fill="#c9a84c" opacity=".2"/>
+        <rect x="5" y="4" width="14" height="20" rx="1.5" stroke="#c9a84c" stroke-width="1.2" fill="none"/>
+        <line x1="8" y1="10" x2="17" y2="10" stroke="#c9a84c" stroke-width="1" stroke-linecap="round"/>
+        <line x1="8" y1="14" x2="17" y2="14" stroke="#c9a84c" stroke-width="1" stroke-linecap="round"/>
+        <line x1="8" y1="18" x2="14" y2="18" stroke="#c9a84c" stroke-width="1" stroke-linecap="round"/>
+      </svg>
+      Athenaeum
+    </div>
+    <div class="nav-tabs" id="nav-tabs">
+      <button class="nav-tab active" data-page="library" onclick="switchPage('library')">📚 Library</button>
+      <button class="nav-tab" data-page="booking" onclick="switchPage('booking')" id="tab-booking">🏛️ Graduate Room</button>
+      <button class="nav-tab" data-page="chess" onclick="switchPage('chess')">♟️ Chess</button>
+      <button class="nav-tab" data-page="donate" onclick="switchPage('donate')">📦 Donate</button>
+      <button class="nav-tab" data-page="hours" onclick="switchPage('hours')" id="tab-hours">🕐 Hours & Staff</button>
+      <button class="nav-tab admin-only" data-page="admin" onclick="switchPage('admin')" id="tab-admin" style="display:none">⚙️ Admin</button>
+    </div>
+    <div class="nav-right">
+      <div class="user-badge"><div class="user-dot"></div><span id="nav-username">Guest</span></div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Notification Banner -->
+  <div id="notif-banner">
+    <span>🔔</span><span id="notif-text"></span>
+    <span class="notif-close" onclick="closeNotif()">✕</span>
+  </div>
+
+  <!-- ===== PAGE: LIBRARY ===== -->
+  <div class="page active" id="page-library">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Central <span>Collection</span></div>
+        <div class="page-sub" id="book-count-label">Loading books...</div>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="book-search" placeholder="Search by title or author..." oninput="filterBooks()">
+      </div>
+      <div id="cat-filters" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="filter-btn active" onclick="setCatFilter('All',this)">All</button>
+      </div>
+    </div>
+    <div class="book-grid" id="book-grid"></div>
+  </div>
+
+  <!-- ===== PAGE: BOOKING ===== -->
+  <div class="page" id="page-booking">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Graduate <span>Room</span> Booking</div>
+        <div class="page-sub">Reserve the graduate study room for group or individual sessions</div>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-card"><div class="info-card-label">Capacity</div><div class="info-card-value">12 persons</div><div class="info-card-sub">Tables & whiteboards available</div></div>
+      <div class="info-card"><div class="info-card-label">Session Limit</div><div class="info-card-value">3 hours max</div><div class="info-card-sub">Extendable if no conflict</div></div>
+      <div class="info-card"><div class="info-card-label">Booking Status</div><div class="info-card-value status-open" id="room-status-text">Open Today</div><div class="info-card-sub">Subject to availability</div></div>
+    </div>
+    <div class="form-section">
+      <div class="form-card">
+        <div class="form-title">📋 Reserve a Time Slot</div>
+        <div class="form-row">
+          <div class="form-group"><label>Full Name</label><input type="text" id="b-name" placeholder="Your full name"></div>
+          <div class="form-group"><label>Student ID</label><input type="text" id="b-id" placeholder="e.g. 2024-00001"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Date</label><input type="date" id="b-date"></div>
+          <div class="form-group"><label>Time Slot</label>
+            <select id="b-time">
+              <option value="">Select a slot</option>
+              <option>7:00 AM – 10:00 AM</option>
+              <option>10:00 AM – 1:00 PM</option>
+              <option>1:00 PM – 4:00 PM</option>
+              <option>4:00 PM – 6:00 PM</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>No. of Persons</label><input type="number" id="b-pax" placeholder="1–12" min="1" max="12"></div>
+          <div class="form-group"><label>Purpose</label>
+            <select id="b-purpose">
+              <option>Group Study</option>
+              <option>Thesis / Research</option>
+              <option>Project Meeting</option>
+              <option>Individual Study</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+        <button class="submit-btn" onclick="submitBooking()">📌 Confirm Booking</button>
+      </div>
+    </div>
+    <!-- My Bookings -->
+    <div class="bookings-list" id="my-bookings-wrap" style="display:none;">
+      <div class="page-title" style="font-size:1.2rem;margin-bottom:16px;">My <span style="color:var(--gold)">Bookings</span></div>
+      <div id="my-bookings-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE: CHESS ===== -->
+  <div class="page" id="page-chess">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Chess Set <span>Borrowing</span></div>
+        <div class="page-sub">Borrow a chess set for use inside the library premises only</div>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-card"><div class="info-card-label">Rule</div><div class="info-card-value">In-Library Only</div><div class="info-card-sub">Sets must not leave the building</div></div>
+      <div class="info-card"><div class="info-card-label">Duration</div><div class="info-card-value">Up to 2 hours</div><div class="info-card-sub">Return before closing</div></div>
+      <div class="info-card"><div class="info-card-label">Return Policy</div><div class="info-card-value">Full Set Required</div><div class="info-card-sub">Report missing pieces immediately</div></div>
+    </div>
+    <div class="chess-grid" id="chess-grid"></div>
+    <!-- Borrow form -->
+    <div class="form-section" id="chess-form-wrap" style="display:none;">
+      <div class="form-card">
+        <div class="form-title" id="chess-form-title">♟️ Borrow Chess Set</div>
+        <div class="form-row">
+          <div class="form-group"><label>Full Name</label><input type="text" id="c-name" placeholder="Your full name"></div>
+          <div class="form-group"><label>Student ID</label><input type="text" id="c-id" placeholder="e.g. 2024-00001"></div>
+        </div>
+        <button class="submit-btn" onclick="confirmChessBorrow()">♟️ Borrow Now</button>
+        <button class="admin-btn red" style="margin-top:10px;" onclick="cancelChessForm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE: DONATE ===== -->
+  <div class="page" id="page-donate">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Book <span>Donations</span></div>
+        <div class="page-sub">Help us grow the library collection</div>
+      </div>
+    </div>
+    <div class="donation-info">
+      <p>The CTU-DB Library welcomes book donations from students, faculty, and alumni. All donated books are reviewed by our librarian team and added to the collection when suitable. Donors will be acknowledged in the library registry.</p>
+    </div>
+    <div class="form-section">
+      <div class="form-card">
+        <div class="form-title">📦 Submit a Donation</div>
+        <div class="form-row">
+          <div class="form-group"><label>Donor Name</label><input type="text" id="d-name" placeholder="Your full name"></div>
+          <div class="form-group"><label>Contact / Email</label><input type="text" id="d-contact" placeholder="Optional"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Book Title</label><input type="text" id="d-title" placeholder="Title of the book"></div>
+          <div class="form-group"><label>Author</label><input type="text" id="d-author" placeholder="Author name"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Category</label>
+            <select id="d-cat">
+              <option>Literature</option><option>Science</option><option>Engineering</option>
+              <option>Mathematics</option><option>History</option><option>Philosophy</option>
+              <option>Law</option><option>Medical / Health</option><option>Religion</option>
+              <option>Arts</option><option>Technology</option><option>Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Condition</label>
+            <select id="d-cond">
+              <option>Mint / Like New</option><option>Good</option><option>Fair</option><option>Needs Restoration</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:2"><label>Notes (Optional)</label><textarea id="d-notes" placeholder="Any notes about the book..."></textarea></div>
+        </div>
+        <button class="submit-btn" onclick="submitDonation()">📦 Submit Donation</button>
+      </div>
+    </div>
+    <!-- Pending Donations for Admin -->
+    <div class="admin-section" id="donations-admin" style="display:none;">
+      <div class="page-title" style="font-size:1.2rem;margin-bottom:16px;">Pending <span style="color:var(--gold)">Donations</span></div>
+      <div id="donations-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE: HOURS & STAFF ===== -->
+  <div class="page" id="page-hours">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Library <span>Hours</span> & Staff</div>
+        <div class="page-sub">Opening hours and librarian availability</div>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-card" id="today-status-card">
+        <div class="info-card-label">Today's Status</div>
+        <div class="info-card-value" id="today-open-status">—</div>
+        <div class="info-card-sub" id="today-hours-sub">—</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Location</div>
+        <div class="info-card-value" style="font-size:1rem">CTU-DB Main Building</div>
+        <div class="info-card-sub">2nd Floor, Room 204</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Contact</div>
+        <div class="info-card-value" style="font-size:1rem">library@ctu.edu.ph</div>
+        <div class="info-card-sub">(032) 261-7741</div>
+      </div>
+    </div>
+    <div class="hours-section">
+      <div class="page-title" style="font-size:1.1rem;margin-bottom:4px;">Weekly <span style="color:var(--gold)">Schedule</span></div>
+      <div class="hours-grid" id="hours-grid"></div>
+    </div>
+    <div class="hours-section">
+      <div class="page-title" style="font-size:1.1rem;margin-bottom:16px;">Librarian <span style="color:var(--gold)">Staff</span></div>
+      <div class="librarian-grid" id="librarian-grid"></div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE: ADMIN ===== -->
+  <div class="page" id="page-admin">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Admin <span>Panel</span></div>
+        <div class="page-sub">Manage books, donations, bookings, and staff</div>
+      </div>
+    </div>
+    <div class="admin-section">
+      <div class="admin-grid">
+        <!-- Add Book -->
+        <div class="admin-card">
+          <div class="admin-card-title">➕ Add Book</div>
+          <input class="admin-input" id="a-title" placeholder="Book Title *">
+          <input class="admin-input" id="a-author" placeholder="Author">
+          <input class="admin-input" id="a-year" placeholder="Year">
+          <input class="admin-input" id="a-category" placeholder="Category">
+          <input class="admin-input" id="a-cover" placeholder="Cover Image URL">
+          <input class="admin-input" id="a-readlink" placeholder="Read Link (optional)">
+          <select class="admin-input" id="a-status"><option>Available</option><option>Borrowed</option></select>
+          <button class="admin-btn green" onclick="adminAddBook()">Add Book</button>
+          <button class="admin-btn red" onclick="adminDeleteBook()">Delete by Title</button>
+        </div>
+        <!-- Update Librarian Status -->
+        <div class="admin-card">
+          <div class="admin-card-title">👤 Update Staff Status</div>
+          <select class="admin-input" id="a-lib-select"></select>
+          <select class="admin-input" id="a-lib-status">
+            <option value="available">Available</option>
+            <option value="unavailable">Unavailable / On Leave</option>
+          </select>
+          <input class="admin-input" id="a-lib-schedule" placeholder="Schedule note (e.g. Mon–Fri 8AM–5PM)">
+          <button class="admin-btn blue" onclick="updateLibrarianStatus()">Update Status</button>
+        </div>
+        <!-- Stats -->
+        <div class="admin-card">
+          <div class="admin-card-title">📊 Quick Stats</div>
+          <div style="display:grid;gap:10px;" id="admin-stats"></div>
+        </div>
+      </div>
+      <!-- Pending Book Suggestions -->
+      <div class="admin-card-title" style="margin-bottom:12px;">📬 Pending Book Suggestions</div>
+      <div id="admin-pending-list" style="margin-bottom:32px;"></div>
+      <!-- Pending Donations -->
+      <div class="admin-card-title" style="margin-bottom:12px;">📦 Pending Donations</div>
+      <div id="admin-donations-list" style="margin-bottom:32px;"></div>
+      <!-- All Bookings -->
+      <div class="admin-card-title" style="margin-bottom:12px;">🏛️ All Room Bookings</div>
+      <div id="admin-bookings-list"></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- Modal -->
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-inner">
+      <img class="modal-cover" id="m-cover" src="" alt="">
+      <div class="modal-info">
+        <div class="modal-title" id="m-title"></div>
+        <div class="modal-author" id="m-author"></div>
+        <div class="modal-meta">
+          <p><strong>Year:</strong> <span id="m-year"></span></p>
+          <p><strong>Category:</strong> <span id="m-cat"></span></p>
+          <p><strong>Condition:</strong> <span id="m-cond"></span></p>
+          <p><strong>Status:</strong> <span id="m-status"></span></p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-primary" id="m-read-btn" onclick="startReading()" style="display:none">📖 Start Reading Online</button>
+          <button class="btn-secondary" id="m-shelf-btn" onclick="addToShelfFromModal()">+ Add to My Shelf</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container"></div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const BOOKS_DEFAULT = [
+  {"title":"The Alchemist","author":"Paulo Coelho","year":"1988","category":"Literature","condition":"Excellent","status":"Available","cover":"https://covers.openlibrary.org/b/id/15121528-L.jpg","readLink":"https://archive.org/stream/TheAlchemistPauloCoelho/The%20Alchemist%20-%20Paulo%20Coelho_djvu.txt"},
+  {"title":"Pride and Prejudice","author":"Jane Austen","year":"1813","category":"Classic","condition":"Fragile","status":"Available","cover":"https://archive.org/download/prideprejudice0000jane_u2q4/page/cover_w500_h500.jpg","readLink":"https://www.gutenberg.org/files/1342/1342-h/1342-h.htm"},
+  {"title":"Moby Dick","author":"Herman Melville","year":"1851","category":"Classic","condition":"Needs Restoration","status":"Available","cover":"https://covers.openlibrary.org/b/id/12621992-L.jpg"},
+  {"title":"The Great Gatsby","author":"F. Scott Fitzgerald","year":"1920","category":"Classic Fiction","condition":"Worn Edges","status":"Available","cover":"https://covers.openlibrary.org/b/id/15175523-L.jpg"},
+  {"title":"The Picture of Dorian Gray","author":"Oscar Wilde","year":"1890","category":"Gothic Horror","condition":"Mint","status":"Available","cover":"https://covers.openlibrary.org/b/id/14314700-L.jpg"},
+  {"title":"Sherlock Holmes","author":"Arthur Conan Doyle","year":"1887","category":"Mystery","condition":"Yellowed Pages","status":"Available","cover":"https://covers.openlibrary.org/b/id/8242351-L.jpg","readLink":"https://www.gutenberg.org/files/1661/1661-h/1661-h.htm"},
+  {"title":"Frankenstein","author":"Mary Shelley","year":"1818","category":"Science Fiction","condition":"Loose Binding","status":"Borrowed","cover":"https://covers.openlibrary.org/b/id/12752093-L.jpg"},
+  {"title":"1984","author":"George Orwell","year":"1949","category":"Dystopian","condition":"Good","status":"Available","cover":"https://covers.openlibrary.org/b/id/12739335-L.jpg"},
+  {"title":"Dracula","author":"Bram Stoker","year":"1897","category":"Gothic Horror","condition":"Yellowed Pages","status":"Available","cover":"https://covers.openlibrary.org/b/id/12622155-L.jpg"},
+  {"title":"The Hobbit","author":"J.R.R. Tolkien","year":"1937","category":"Fantasy","condition":"Excellent","status":"Available","cover":"https://covers.openlibrary.org/b/id/14627222-L.jpg"},
+  {"title":"Little Women","author":"Louisa May Alcott","year":"1848","category":"Literature","condition":"Fragile","status":"Available","cover":"https://covers.openlibrary.org/b/id/10615618-L.jpg"},
+  {"title":"Wuthering Heights","author":"Emily Brontë","year":"1847","category":"Classic","condition":"Mint","status":"Available","cover":"https://covers.openlibrary.org/b/id/8255334-L.jpg"},
+  {"title":"The Catcher in the Rye","author":"J.D. Salinger","year":"1951","category":"Literature","condition":"Good","status":"Available","cover":"https://covers.openlibrary.org/b/id/15172466-L.jpg"},
+  {"title":"Crime and Punishment","author":"Fyodor Dostoevsky","year":"1866","category":"Psychological Fiction","condition":"Needs Restoration","status":"Available","cover":"https://covers.openlibrary.org/b/id/12622046-L.jpg"},
+  {"title":"Brave New World","author":"Aldous Huxley","year":"1932","category":"Dystopian","condition":"Yellowed Pages","status":"Borrowed","cover":"https://covers.openlibrary.org/b/id/14846947-L.jpg"}
+];
+
+const HOURS_DATA = [
+  {day:'Monday',open:'7:00 AM',close:'6:00 PM',closed:false},
+  {day:'Tuesday',open:'7:00 AM',close:'6:00 PM',closed:false},
+  {day:'Wednesday',open:'7:00 AM',close:'6:00 PM',closed:false},
+  {day:'Thursday',open:'7:00 AM',close:'6:00 PM',closed:false},
+  {day:'Friday',open:'7:00 AM',close:'5:00 PM',closed:false},
+  {day:'Saturday',open:'8:00 AM',close:'12:00 PM',closed:false},
+  {day:'Sunday',open:'',close:'',closed:true}
+];
+
+const LIBRARIANS_DEFAULT = [
+  {name:'Ms. Ana Reyes',role:'Head Librarian',status:'available',schedule:'Mon–Fri  8:00 AM – 5:00 PM',initial:'AR'},
+  {name:'Mr. Carlo Dizon',role:'Assistant Librarian',status:'available',schedule:'Mon–Sat  8:00 AM – 5:00 PM',initial:'CD'},
+  {name:'Ms. Luz Bautista',role:'Reference Librarian',status:'unavailable',schedule:'Currently on leave',initial:'LB'}
+];
+
+const CHESS_SETS = [
+  {id:1,name:'Chess Set A',icon:'♟️'},
+  {id:2,name:'Chess Set B',icon:'♟️'},
+  {id:3,name:'Chess Set C',icon:'♟️'},
+  {id:4,name:'Chess Set D',icon:'♟️'}
+];
+
+// ============================================================
+// STATE
+// ============================================================
+let currentUser = null;
+let isAdmin = false;
+let books = [];
+let librarians = [];
+let activeCatFilter = 'All';
+let currentBookIndex = null;
+let selectedChessId = null;
+
+function loadState() {
+  books = JSON.parse(localStorage.getItem('lib_books')) || JSON.parse(JSON.stringify(BOOKS_DEFAULT));
+  librarians = JSON.parse(localStorage.getItem('lib_librarians')) || JSON.parse(JSON.stringify(LIBRARIANS_DEFAULT));
+}
+function saveBooks() { localStorage.setItem('lib_books', JSON.stringify(books)); }
+function saveLibrarians() { localStorage.setItem('lib_librarians', JSON.stringify(librarians)); }
+function getPending() { return JSON.parse(localStorage.getItem('lib_pending')) || []; }
+function savePending(p) { localStorage.setItem('lib_pending', JSON.stringify(p)); }
+function getDonations() { return JSON.parse(localStorage.getItem('lib_donations')) || []; }
+function saveDonations(d) { localStorage.setItem('lib_donations', JSON.stringify(d)); }
+function getBookings() { return JSON.parse(localStorage.getItem('lib_bookings')) || []; }
+function saveBookings(b) { localStorage.setItem('lib_bookings', JSON.stringify(b)); }
+function getChessState() { return JSON.parse(localStorage.getItem('lib_chess')) || {}; }
+function saveChessState(c) { localStorage.setItem('lib_chess', JSON.stringify(c)); }
+function getUsers() { return JSON.parse(localStorage.getItem('lib_users')) || []; }
+function saveUsers(u) { localStorage.setItem('lib_users', JSON.stringify(u)); }
+
+// ============================================================
+// AUTH
+// ============================================================
+function login() {
+  const u = document.getElementById('l-user').value.trim();
+  const p = document.getElementById('l-pass').value;
+  document.getElementById('login-err').textContent = '';
+  if (u === 'admin' && p === '123') {
+    currentUser = 'admin'; isAdmin = true;
+    startApp();
+  } else {
+    const users = getUsers();
+    const found = users.find(x => x.username === u && x.password === p);
+    if (found) {
+      currentUser = u; isAdmin = false;
+      startApp();
+    } else {
+      document.getElementById('login-err').textContent = 'Invalid username or password.';
+    }
+  }
+}
+function registerAccount() {
+  const u = document.getElementById('r-user').value.trim();
+  const p = document.getElementById('r-pass').value;
+  const n = document.getElementById('r-name').value.trim();
+  if (!u || !p || !n) { document.getElementById('reg-err').textContent = 'All fields required.'; return; }
+  const users = getUsers();
+  if (users.find(x => x.username === u)) { document.getElementById('reg-err').textContent = 'Username already taken.'; return; }
+  users.push({username:u, password:p, name:n});
+  saveUsers(users);
+  toast('Account created! You can now log in.', 'success');
+  showLoginPage();
+}
+function logout() {
+  currentUser = null; isAdmin = false;
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('login-page').style.display = 'flex';
+  document.getElementById('l-user').value = '';
+  document.getElementById('l-pass').value = '';
+}
+function showRegisterPage() {
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('register-page').classList.add('active');
+  document.getElementById('reg-err').textContent = '';
+}
+function showLoginPage() {
+  document.getElementById('register-page').classList.remove('active');
+  document.getElementById('login-page').style.display = 'flex';
+}
+function startApp() {
+  loadState();
+  document.getElementById('login-page').style.display = 'none';
+  document.getElementById('app').classList.add('active');
+  document.getElementById('nav-username').textContent = currentUser;
+  document.getElementById('tab-admin').style.display = isAdmin ? 'inline-block' : 'none';
+  switchPage('library');
+  renderHours();
+  renderLibrarians();
+  renderChess();
+  checkNotifications();
+  if (isAdmin) { renderAdminLibSelect(); renderAdminStats(); }
+}
+
+// ============================================================
+// NOTIFICATIONS
+// ============================================================
+function checkNotifications() {
+  const key = `notif_${currentUser}`;
+  const note = localStorage.getItem(key);
+  if (note) {
+    const b = document.getElementById('notif-banner');
+    document.getElementById('notif-text').textContent = note;
+    b.classList.add('show');
+    localStorage.removeItem(key);
+  }
+}
+function closeNotif() { document.getElementById('notif-banner').classList.remove('show'); }
+
+// ============================================================
+// PAGE SWITCHING
+// ============================================================
+function switchPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  document.querySelector(`[data-page="${id}"]`).classList.add('active');
+  if (id === 'library') renderBooks();
+  if (id === 'admin') { renderAdminPending(); renderAdminDonations(); renderAdminBookings(); renderAdminStats(); }
+  if (id === 'booking') renderMyBookings();
+  if (id === 'donate' && isAdmin) renderAdminDonationsInDonate();
+}
+
+// ============================================================
+// BOOKS
+// ============================================================
+function getCategories() {
+  return ['All', ...new Set(books.map(b => b.category))];
+}
+function buildCatFilters() {
+  const wrap = document.getElementById('cat-filters');
+  wrap.innerHTML = '';
+  getCategories().forEach(cat => {
+    const btn = document.createElement('button');
+    btn.className = 'filter-btn' + (cat === activeCatFilter ? ' active' : '');
+    btn.textContent = cat;
+    btn.onclick = () => setCatFilter(cat, btn);
+    wrap.appendChild(btn);
+  });
+}
+function setCatFilter(cat, btn) {
+  activeCatFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderBooks();
+}
+function filterBooks() { renderBooks(); }
+function renderBooks() {
+  buildCatFilters();
+  const search = (document.getElementById('book-search').value || '').toLowerCase();
+  let list = books.filter(b => {
+    const matchCat = activeCatFilter === 'All' || b.category === activeCatFilter;
+    const matchSearch = b.title.toLowerCase().includes(search) || b.author.toLowerCase().includes(search);
+    return matchCat && matchSearch;
+  });
+  const grid = document.getElementById('book-grid');
+  grid.innerHTML = '';
+  if (!list.length) { grid.innerHTML = '<div class="empty-state">No books found.</div>'; }
+  list.forEach((book, i) => {
+    const realIdx = books.indexOf(book);
+    const div = document.createElement('div');
+    div.className = 'book-card';
+    div.innerHTML = `
+      <img class="book-cover" src="${book.cover || 'https://via.placeholder.com/150'}" alt="${book.title}" onerror="this.src='https://via.placeholder.com/150'">
+      <div class="book-body">
+        <span class="book-cat-tag">${book.category}</span>
+        <div class="book-title">${book.title}</div>
+        <div class="book-author">${book.author} · ${book.year}</div>
+        <span class="book-status ${book.status === 'Available' ? 'available' : 'borrowed'}">${book.status === 'Available' ? '✓' : '✕'} ${book.status}</span>
+      </div>`;
+    div.onclick = () => openModal(realIdx);
+    grid.appendChild(div);
+  });
+  document.getElementById('book-count-label').textContent = `${list.length} book${list.length !== 1 ? 's' : ''} found`;
+}
+
+// ============================================================
+// MODAL
+// ============================================================
+function openModal(idx) {
+  currentBookIndex = idx;
+  const b = books[idx];
+  document.getElementById('m-cover').src = b.cover || 'https://via.placeholder.com/150';
+  document.getElementById('m-title').textContent = b.title;
+  document.getElementById('m-author').textContent = 'By ' + b.author;
+  document.getElementById('m-year').textContent = b.year;
+  document.getElementById('m-cat').textContent = b.category;
+  document.getElementById('m-cond').textContent = b.condition || 'Unknown';
+  document.getElementById('m-status').textContent = b.status;
+  const readBtn = document.getElementById('m-read-btn');
+  readBtn.style.display = (b.readLink || b.readlink) ? 'block' : 'none';
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function startReading() {
+  const b = books[currentBookIndex];
+  const link = b.readLink || b.readlink;
+  if (link) window.open(link, '_blank');
+}
+function addToShelfFromModal() {
+  if (currentBookIndex === null) return;
+  const b = books[currentBookIndex];
+  const key = `shelf_${currentUser}`;
+  let shelf = JSON.parse(localStorage.getItem(key)) || [];
+  if (shelf.find(x => x.title === b.title)) { toast('Already in your shelf.', 'info'); return; }
+  shelf.push(b);
+  localStorage.setItem(key, JSON.stringify(shelf));
+  toast(`"${b.title}" added to your shelf!`, 'success');
+  closeModal();
+}
+
+// ============================================================
+// HOURS & LIBRARIANS
+// ============================================================
+function renderHours() {
+  const days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const today = days[new Date().getDay()];
+  const grid = document.getElementById('hours-grid');
+  grid.innerHTML = '';
+  HOURS_DATA.forEach(h => {
+    const isToday = h.day === today;
+    const div = document.createElement('div');
+    div.className = 'hour-cell' + (isToday ? ' today' : '') + (h.closed ? ' closed' : '');
+    div.innerHTML = `<div class="hour-day">${h.day}${isToday ? ' ★' : ''}</div><div class="hour-time">${h.closed ? 'Closed' : h.open + ' – ' + h.close}</div>`;
+    grid.appendChild(div);
+  });
+  // today status
+  const todayData = HOURS_DATA.find(h => h.day === today);
+  const el = document.getElementById('today-open-status');
+  const sub = document.getElementById('today-hours-sub');
+  if (todayData && !todayData.closed) {
+    el.textContent = 'Open'; el.className = 'info-card-value status-open';
+    sub.textContent = todayData.open + ' – ' + todayData.close;
+  } else {
+    el.textContent = 'Closed Today'; el.className = 'info-card-value status-closed';
+    sub.textContent = 'See schedule below';
+  }
+}
+function renderLibrarians() {
+  const grid = document.getElementById('librarian-grid');
+  grid.innerHTML = '';
+  librarians.forEach(l => {
+    const div = document.createElement('div');
+    div.className = 'librarian-card';
+    div.innerHTML = `
+      <div class="lib-avatar">${l.initial}</div>
+      <div class="lib-name">${l.name}</div>
+      <div class="lib-role">${l.role}</div>
+      <span class="lib-status ${l.status}">${l.status === 'available' ? '● Available' : '○ Unavailable'}</span>
+      <div class="lib-schedule">${l.schedule}</div>`;
+    grid.appendChild(div);
+  });
+}
+
+// ============================================================
+// CHESS BORROWING
+// ============================================================
+function renderChess() {
+  const grid = document.getElementById('chess-grid');
+  const chess = getChessState();
+  grid.innerHTML = '';
+  CHESS_SETS.forEach(s => {
+    const borrowed = chess[s.id];
+    const div = document.createElement('div');
+    div.className = 'chess-card';
+    div.innerHTML = `
+      <div class="chess-icon">${s.icon}</div>
+      <div class="chess-name">${s.name}</div>
+      <div class="chess-set-status" style="color:${borrowed ? '#f87171' : '#4ade80'}">${borrowed ? `Borrowed by ${borrowed.name}` : 'Available'}</div>
+      <button class="borrow-chess-btn ${borrowed ? 'cant' : 'can'}" onclick="${borrowed ? '' : `openChessForm(${s.id})`}">${borrowed ? '✕ Unavailable' : '♟️ Borrow'}</button>`;
+    if (isAdmin && borrowed) {
+      div.innerHTML += `<button class="admin-btn red" style="width:100%;margin-top:8px;" onclick="returnChess(${s.id})">Return Set</button>`;
+    }
+    grid.appendChild(div);
+  });
+}
+function openChessForm(id) {
+  selectedChessId = id;
+  const s = CHESS_SETS.find(x => x.id === id);
+  document.getElementById('chess-form-title').textContent = `♟️ Borrow ${s.name}`;
+  document.getElementById('chess-form-wrap').style.display = 'block';
+  document.getElementById('chess-form-wrap').scrollIntoView({behavior:'smooth'});
+}
+function cancelChessForm() {
+  selectedChessId = null;
+  document.getElementById('chess-form-wrap').style.display = 'none';
+}
+function confirmChessBorrow() {
+  const name = document.getElementById('c-name').value.trim();
+  const id = document.getElementById('c-id').value.trim();
+  if (!name || !id) { toast('Please fill in all fields.', 'error'); return; }
+  const chess = getChessState();
+  chess[selectedChessId] = {name, id, borrowedAt: new Date().toLocaleString()};
+  saveChessState(chess);
+  toast(`Chess Set borrowed! Please return before closing time.`, 'success');
+  cancelChessForm();
+  renderChess();
+  document.getElementById('c-name').value = '';
+  document.getElementById('c-id').value = '';
+}
+function returnChess(id) {
+  const chess = getChessState();
+  delete chess[id];
+  saveChessState(chess);
+  renderChess();
+  toast('Chess set marked as returned.', 'success');
+}
+
+// ============================================================
+// ROOM BOOKING
+// ============================================================
+function submitBooking() {
+  const name = document.getElementById('b-name').value.trim();
+  const sid = document.getElementById('b-id').value.trim();
+  const date = document.getElementById('b-date').value;
+  const time = document.getElementById('b-time').value;
+  const pax = document.getElementById('b-pax').value;
+  const purpose = document.getElementById('b-purpose').value;
+  if (!name || !sid || !date || !time || !pax) { toast('Please fill in all required fields.', 'error'); return; }
+  const bookings = getBookings();
+  bookings.push({id: Date.now(), user: currentUser, name, sid, date, time, pax, purpose, status:'Pending'});
+  saveBookings(bookings);
+  toast('Booking submitted! Awaiting librarian confirmation.', 'success');
+  ['b-name','b-id','b-date','b-time','b-pax'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  renderMyBookings();
+}
+function renderMyBookings() {
+  const bookings = getBookings().filter(b => b.user === currentUser || isAdmin);
+  const wrap = document.getElementById('my-bookings-wrap');
+  const list = document.getElementById('my-bookings-list');
+  if (!bookings.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  list.innerHTML = '';
+  bookings.forEach(b => {
+    const div = document.createElement('div');
+    div.className = 'booking-item';
+    div.innerHTML = `
+      <div class="booking-icon">🏛️</div>
+      <div class="booking-info">
+        <div class="booking-name">${b.name} — ${b.purpose}</div>
+        <div class="booking-meta">${b.date} · ${b.time} · ${b.pax} person(s) · ID: ${b.sid}</div>
+      </div>
+      <span class="booking-badge ${b.status === 'Confirmed' ? 'confirmed' : 'pending'}">${b.status}</span>
+      ${(b.user === currentUser) ? `<button class="cancel-booking" onclick="cancelBooking(${b.id})">Cancel</button>` : ''}`;
+    list.appendChild(div);
+  });
+}
+function cancelBooking(id) {
+  let bookings = getBookings();
+  bookings = bookings.filter(b => b.id !== id);
+  saveBookings(bookings);
+  renderMyBookings();
+  toast('Booking cancelled.', 'info');
+}
+
+// ============================================================
+// DONATIONS
+// ============================================================
+function submitDonation() {
+  const name = document.getElementById('d-name').value.trim();
+  const title = document.getElementById('d-title').value.trim();
+  const author = document.getElementById('d-author').value.trim();
+  if (!name || !title || !author) { toast('Please fill in Donor Name, Title, and Author.', 'error'); return; }
+  const donations = getDonations();
+  donations.push({
+    id: Date.now(), donor: name, contact: document.getElementById('d-contact').value,
+    title, author, category: document.getElementById('d-cat').value,
+    condition: document.getElementById('d-cond').value, notes: document.getElementById('d-notes').value,
+    submittedBy: currentUser, status: 'Pending'
+  });
+  saveDonations(donations);
+  toast('Thank you! Your donation has been submitted for review.', 'success');
+  ['d-name','d-contact','d-title','d-author','d-notes'].forEach(id => document.getElementById(id).value = '');
+}
+function renderAdminDonationsInDonate() {
+  const wrap = document.getElementById('donations-admin');
+  const list = document.getElementById('donations-list');
+  const donations = getDonations().filter(d => d.status === 'Pending');
+  if (!isAdmin || !donations.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  list.innerHTML = donations.map(d => `
+    <div class="pending-card">
+      <div class="pending-info"><h4>${d.title}</h4><p>${d.author} · ${d.category} · ${d.condition} · Donor: ${d.donor}</p></div>
+      <div class="pending-actions">
+        <button class="approve-btn" onclick="approveDonation(${d.id})">Accept</button>
+        <button class="reject-btn" onclick="rejectDonation(${d.id})">Reject</button>
+      </div>
+    </div>`).join('');
+}
+function approveDonation(id) {
+  let donations = getDonations();
+  const d = donations.find(x => x.id === id);
+  if (!d) return;
+  // Add to library
+  books.push({title:d.title, author:d.author, year:'2026', category:d.category, condition:d.condition, status:'Available', cover:'https://via.placeholder.com/150?text=Donated'});
+  saveBooks();
+  d.status = 'Approved';
+  saveDonations(donations);
+  toast(`"${d.title}" added to the library!`, 'success');
+  renderAdminDonations(); renderAdminDonationsInDonate(); renderAdminStats();
+}
+function rejectDonation(id) {
+  let donations = getDonations();
+  const d = donations.find(x => x.id === id);
+  if (!d) return;
+  d.status = 'Rejected';
+  saveDonations(donations);
+  toast('Donation rejected.', 'info');
+  renderAdminDonations(); renderAdminDonationsInDonate();
+}
+
+// ============================================================
+// ADMIN PANEL
+// ============================================================
+function adminAddBook() {
+  const title = document.getElementById('a-title').value.trim();
+  if (!title) { toast('Title is required.', 'error'); return; }
+  books.push({
+    title, author: document.getElementById('a-author').value || 'Unknown',
+    year: document.getElementById('a-year').value || '2026',
+    category: document.getElementById('a-category').value || 'General',
+    cover: document.getElementById('a-cover').value || 'https://via.placeholder.com/150',
+    readLink: document.getElementById('a-readlink').value || '',
+    condition: 'Good',
+    status: document.getElementById('a-status').value
+  });
+  saveBooks();
+  ['a-title','a-author','a-year','a-category','a-cover','a-readlink'].forEach(id => document.getElementById(id).value = '');
+  toast(`"${title}" added to the library.`, 'success');
+  renderAdminStats(); renderBooks();
+}
+function adminDeleteBook() {
+  const title = document.getElementById('a-title').value.trim();
+  if (!title) { toast('Enter the exact title in the Title field.', 'error'); return; }
+  const before = books.length;
+  books = books.filter(b => b.title.toLowerCase() !== title.toLowerCase());
+  if (books.length < before) { saveBooks(); toast(`"${title}" removed.`, 'success'); renderAdminStats(); renderBooks(); }
+  else toast('Book not found. Check the spelling.', 'error');
+}
+function renderAdminLibSelect() {
+  const sel = document.getElementById('a-lib-select');
+  if (!sel) return;
+  sel.innerHTML = librarians.map((l,i) => `<option value="${i}">${l.name}</option>`).join('');
+}
+function updateLibrarianStatus() {
+  const idx = parseInt(document.getElementById('a-lib-select').value);
+  librarians[idx].status = document.getElementById('a-lib-status').value;
+  const sched = document.getElementById('a-lib-schedule').value.trim();
+  if (sched) librarians[idx].schedule = sched;
+  saveLibrarians();
+  renderLibrarians();
+  toast('Staff status updated.', 'success');
+}
+function renderAdminPending() {
+  const list = document.getElementById('admin-pending-list');
+  const pending = getPending();
+  if (!pending.length) { list.innerHTML = '<p style="color:rgba(240,236,228,.35);font-size:.85rem;">No pending suggestions.</p>'; return; }
+  list.innerHTML = pending.map((b,i) => `
+    <div class="pending-card">
+      <div class="pending-info"><h4>${b.title}</h4><p>${b.author} · Suggested by ${b.suggestedBy || 'Unknown'}</p></div>
+      <div class="pending-actions">
+        <button class="approve-btn" onclick="approveSuggestion(${i})">Approve</button>
+        <button class="reject-btn" onclick="rejectSuggestion(${i})">Reject</button>
+      </div>
+    </div>`).join('');
+}
+function approveSuggestion(i) {
+  const pending = getPending();
+  const b = pending[i];
+  books.push({title:b.title, author:b.author, year:'2026', category:'Suggestion', condition:'New', status:'Available', cover:'https://via.placeholder.com/150?text=New'});
+  saveBooks();
+  if (b.suggestedBy) localStorage.setItem(`notif_${b.suggestedBy}`, `✅ Approved: Your suggestion "${b.title}" is now in the library!`);
+  pending.splice(i, 1); savePending(pending);
+  renderAdminPending(); renderAdminStats(); renderBooks();
+  toast('Suggestion approved and added to library.', 'success');
+}
+function rejectSuggestion(i) {
+  const pending = getPending();
+  const b = pending[i];
+  const reason = prompt(`Reason for rejecting "${b.title}"?`, 'Not suitable for the collection.');
+  if (reason === null) return;
+  if (b.suggestedBy) localStorage.setItem(`notif_${b.suggestedBy}`, `❌ Rejected: "${b.title}". Reason: ${reason}`);
+  pending.splice(i, 1); savePending(pending);
+  renderAdminPending();
+  toast('Suggestion rejected.', 'info');
+}
+function renderAdminDonations() {
+  const list = document.getElementById('admin-donations-list');
+  if (!list) return;
+  const donations = getDonations().filter(d => d.status === 'Pending');
+  if (!donations.length) { list.innerHTML = '<p style="color:rgba(240,236,228,.35);font-size:.85rem;">No pending donations.</p>'; return; }
+  list.innerHTML = donations.map(d => `
+    <div class="pending-card">
+      <div class="pending-info"><h4>${d.title}</h4><p>${d.author} · ${d.category} · Donor: ${d.donor}</p></div>
+      <div class="pending-actions">
+        <button class="approve-btn" onclick="approveDonation(${d.id})">Accept</button>
+        <button class="reject-btn" onclick="rejectDonation(${d.id})">Reject</button>
+      </div>
+    </div>`).join('');
+}
+function renderAdminBookings() {
+  const list = document.getElementById('admin-bookings-list');
+  if (!list) return;
+  const bookings = getBookings();
+  if (!bookings.length) { list.innerHTML = '<p style="color:rgba(240,236,228,.35);font-size:.85rem;">No bookings yet.</p>'; return; }
+  list.innerHTML = bookings.map(b => `
+    <div class="pending-card">
+      <div class="pending-info"><h4>${b.name} — ${b.purpose}</h4><p>${b.date} · ${b.time} · ${b.pax} person(s) · ID: ${b.sid}</p></div>
+      <div class="pending-actions">
+        ${b.status === 'Pending' ? `<button class="approve-btn" onclick="confirmBooking(${b.id})">Confirm</button>` : '<span style="color:#4ade80;font-size:.8rem;">✓ Confirmed</span>'}
+        <button class="reject-btn" onclick="deleteBooking(${b.id})">Delete</button>
+      </div>
+    </div>`).join('');
+}
+function confirmBooking(id) {
+  let bookings = getBookings();
+  const b = bookings.find(x => x.id === id);
+  if (b) { b.status = 'Confirmed'; if (b.user) localStorage.setItem(`notif_${b.user}`, `✅ Your Graduate Room booking on ${b.date} (${b.time}) has been confirmed!`); }
+  saveBookings(bookings); renderAdminBookings();
+  toast('Booking confirmed.', 'success');
+}
+function deleteBooking(id) {
+  let bookings = getBookings().filter(b => b.id !== id);
+  saveBookings(bookings); renderAdminBookings();
+  toast('Booking deleted.', 'info');
+}
+function renderAdminStats() {
+  const el = document.getElementById('admin-stats');
+  if (!el) return;
+  const available = books.filter(b => b.status === 'Available').length;
+  const borrowed = books.filter(b => b.status === 'Borrowed').length;
+  const pending = getPending().length;
+  const donations = getDonations().filter(d => d.status === 'Pending').length;
+  const bookings = getBookings().length;
+  el.innerHTML = [
+    ['📚 Total Books', books.length],
+    ['✅ Available', available],
+    ['📖 Borrowed', borrowed],
+    ['📬 Pending Suggestions', pending],
+    ['📦 Pending Donations', donations],
+    ['🏛️ Room Bookings', bookings]
+  ].map(([label, val]) => `
+    <div style="display:flex;justify-content:space-between;padding:10px 14px;background:rgba(255,255,255,.04);border-radius:10px;border:1px solid var(--border);">
+      <span style="font-size:.88rem;color:rgba(240,236,228,.6)">${label}</span>
+      <span style="font-weight:700;color:var(--gold-light)">${val}</span>
+    </div>`).join('');
+}
+
+// ============================================================
+// TOAST
+// ============================================================
+function toast(msg, type='info') {
+  const container = document.getElementById('toast-container');
+  const t = document.createElement('div');
+  t.className = `toast ${type}`;
+  const icons = {success:'✓', error:'✕', info:'ℹ'};
+  t.innerHTML = `<span>${icons[type]||'ℹ'}</span><span>${msg}</span>`;
+  container.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(100%)'; t.style.transition = '.4s'; setTimeout(() => t.remove(), 400); }, 3500);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.getElementById('b-date').min = new Date().toISOString().split('T')[0];
+</script>
+</body>
+</html>

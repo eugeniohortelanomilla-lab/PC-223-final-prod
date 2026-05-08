@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CTU-DB Digital Athenaeum - Admin</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+
+<!-- ===== MAIN APP ===== -->
+<div id="app">
+  <!-- Top Nav -->
+  <nav class="topnav">
+    <div class="nav-logo">
+      <svg viewBox="0 0 32 32" fill="none">
+        <rect x="4" y="3" width="16" height="22" rx="2" fill="#c9a84c" opacity=".2"/>
+        <rect x="5" y="4" width="14" height="20" rx="1.5" stroke="#c9a84c" stroke-width="1.2" fill="none"/>
+        <line x1="8" y1="10" x2="17" y2="10" stroke="#c9a84c" stroke-width="1" stroke-linecap="round"/>
+        <line x1="8" y1="14" x2="17" y2="14" stroke="#c9a84c" stroke-width="1" stroke-linecap="round"/>
+        <line x1="8" y1="18" x2="14" y2="18" stroke="#c9a84c" stroke-width="1" stroke-linecap="round"/>
+      </svg>
+      Athenaeum
+    </div>
+    <div class="nav-tabs" id="nav-tabs">
+      <button class="nav-tab active" data-page="library" onclick="switchPage('library')">📚 Library</button>
+      <button class="nav-tab" data-page="booking" onclick="switchPage('booking')" id="tab-booking">🏛️ Graduate Room</button>
+      <button class="nav-tab" data-page="chess" onclick="switchPage('chess')">♟️ Chess</button>
+      <button class="nav-tab" data-page="donate" onclick="switchPage('donate')">📦 Donate</button>
+      <button class="nav-tab" data-page="hours" onclick="switchPage('hours')" id="tab-hours">🕐 Hours & Staff</button>
+      <button class="nav-tab admin-only" data-page="admin" onclick="switchPage('admin')" id="tab-admin" style="display:none">⚙️ Admin</button>
+    </div>
+    <div class="nav-right">
+      <div class="user-badge"><div class="user-dot"></div><span id="nav-username">Guest</span></div>
+      <button class="logout-btn" onclick="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <!-- Notification Banner -->
+  <div id="notif-banner">
+    <span>🔔</span><span id="notif-text"></span>
+    <span class="notif-close" onclick="closeNotif()">✕</span>
+  </div>
+
+  <!-- ===== PAGE: LIBRARY ===== -->
+  <div class="page active" id="page-library">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Central <span>Collection</span></div>
+        <div class="page-sub" id="book-count-label">Loading books...</div>
+      </div>
+    </div>
+    <div class="filter-bar">
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="book-search" placeholder="Search by title or author..." oninput="filterBooks()">
+      </div>
+      <div id="cat-filters" style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button class="filter-btn active" onclick="setCatFilter('All',this)">All</button>
+      </div>
+    </div>
+    <div class="book-grid" id="book-grid"></div>
+  </div>
+
+  <!-- ===== PAGE: BOOKING ===== -->
+  <div class="page" id="page-booking">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Graduate <span>Room</span> Booking</div>
+        <div class="page-sub">Reserve the graduate study room for group or individual sessions</div>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-card"><div class="info-card-label">Capacity</div><div class="info-card-value">12 persons</div><div class="info-card-sub">Tables & whiteboards available</div></div>
+      <div class="info-card"><div class="info-card-label">Session Limit</div><div class="info-card-value">3 hours max</div><div class="info-card-sub">Extendable if no conflict</div></div>
+      <div class="info-card"><div class="info-card-label">Booking Status</div><div class="info-card-value status-open" id="room-status-text">Open Today</div><div class="info-card-sub">Subject to availability</div></div>
+    </div>
+    <div class="form-section">
+      <div class="form-card">
+        <div class="form-title">📋 Reserve a Time Slot</div>
+        <div class="form-row">
+          <div class="form-group"><label>Full Name</label><input type="text" id="b-name" placeholder="Your full name"></div>
+          <div class="form-group"><label>Student ID</label><input type="text" id="b-id" placeholder="e.g. 2024-00001"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Date</label><input type="date" id="b-date"></div>
+          <div class="form-group"><label>Time Slot</label>
+            <select id="b-time">
+              <option value="">Select a slot</option>
+              <option>7:00 AM – 10:00 AM</option>
+              <option>10:00 AM – 1:00 PM</option>
+              <option>1:00 PM – 4:00 PM</option>
+              <option>4:00 PM – 6:00 PM</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>No. of Persons</label><input type="number" id="b-pax" placeholder="1–12" min="1" max="12"></div>
+          <div class="form-group"><label>Purpose</label>
+            <select id="b-purpose">
+              <option>Group Study</option>
+              <option>Thesis / Research</option>
+              <option>Project Meeting</option>
+              <option>Individual Study</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+        <button class="submit-btn" onclick="submitBooking()">📌 Confirm Booking</button>
+      </div>
+    </div>
+    <!-- My Bookings -->
+    <div class="bookings-list" id="my-bookings-wrap" style="display:none;">
+      <div class="page-title" style="font-size:1.2rem;margin-bottom:16px;">My <span style="color:var(--gold)">Bookings</span></div>
+      <div id="my-bookings-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE: CHESS ===== -->
+  <div class="page" id="page-chess">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Chess Set <span>Borrowing</span></div>
+        <div class="page-sub">Borrow a chess set for use inside the library premises only</div>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-card"><div class="info-card-label">Rule</div><div class="info-card-value">In-Library Only</div><div class="info-card-sub">Sets must not leave the building</div></div>
+      <div class="info-card"><div class="info-card-label">Duration</div><div class="info-card-value">Up to 2 hours</div><div class="info-card-sub">Return before closing</div></div>
+      <div class="info-card"><div class="info-card-label">Return Policy</div><div class="info-card-value">Full Set Required</div><div class="info-card-sub">Report missing pieces immediately</div></div>
+    </div>
+    <div class="chess-grid" id="chess-grid"></div>
+    <!-- Borrow form -->
+    <div class="form-section" id="chess-form-wrap" style="display:none;">
+      <div class="form-card">
+        <div class="form-title" id="chess-form-title">♟️ Borrow Chess Set</div>
+        <div class="form-row">
+          <div class="form-group"><label>Full Name</label><input type="text" id="c-name" placeholder="Your full name"></div>
+          <div class="form-group"><label>Student ID</label><input type="text" id="c-id" placeholder="e.g. 2024-00001"></div>
+        </div>
+        <button class="submit-btn" onclick="confirmChessBorrow()">♟️ Borrow Now</button>
+        <button class="admin-btn red" style="margin-top:10px;" onclick="cancelChessForm()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE: DONATE ===== -->
+  <div class="page" id="page-donate">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Book <span>Donations</span></div>
+        <div class="page-sub">Help us grow the library collection</div>
+      </div>
+    </div>
+    <div class="donation-info">
+      <p>The CTU-DB Library welcomes book donations from students, faculty, and alumni. All donated books are reviewed by our librarian team and added to the collection when suitable. Donors will be acknowledged in the library registry.</p>
+    </div>
+    <div class="form-section">
+      <div class="form-card">
+        <div class="form-title">📦 Submit a Donation</div>
+        <div class="form-row">
+          <div class="form-group"><label>Donor Name</label><input type="text" id="d-name" placeholder="Your full name"></div>
+          <div class="form-group"><label>Contact / Email</label><input type="text" id="d-contact" placeholder="Optional"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Book Title</label><input type="text" id="d-title" placeholder="Title of the book"></div>
+          <div class="form-group"><label>Author</label><input type="text" id="d-author" placeholder="Author name"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label>Category</label>
+            <select id="d-cat">
+              <option>Literature</option><option>Science</option><option>Engineering</option>
+              <option>Mathematics</option><option>History</option><option>Philosophy</option>
+              <option>Law</option><option>Medical / Health</option><option>Religion</option>
+              <option>Arts</option><option>Technology</option><option>Other</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Condition</label>
+            <select id="d-cond">
+              <option>Mint / Like New</option><option>Good</option><option>Fair</option><option>Needs Restoration</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="flex:2"><label>Notes (Optional)</label><textarea id="d-notes" placeholder="Any notes about the book..."></textarea></div>
+        </div>
+        <button class="submit-btn" onclick="submitDonation()">📦 Submit Donation</button>
+      </div>
+    </div>
+    <!-- Pending Donations for Admin -->
+    <div class="admin-section" id="donations-admin" style="display:none;">
+      <div class="page-title" style="font-size:1.2rem;margin-bottom:16px;">Pending <span style="color:var(--gold)">Donations</span></div>
+      <div id="donations-list"></div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE: HOURS & STAFF ===== -->
+  <div class="page" id="page-hours">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Library <span>Hours</span> & Staff</div>
+        <div class="page-sub">Opening hours and librarian availability</div>
+      </div>
+    </div>
+    <div class="info-row">
+      <div class="info-card" id="today-status-card">
+        <div class="info-card-label">Today's Status</div>
+        <div class="info-card-value" id="today-open-status">—</div>
+        <div class="info-card-sub" id="today-hours-sub">—</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Location</div>
+        <div class="info-card-value" style="font-size:1rem">CTU-DB Main Building</div>
+        <div class="info-card-sub">2nd Floor, Room 204</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Contact</div>
+        <div class="info-card-value" style="font-size:1rem">library@ctu.edu.ph</div>
+        <div class="info-card-sub">(032) 261-7741</div>
+      </div>
+    </div>
+    <div class="hours-section">
+      <div class="page-title" style="font-size:1.1rem;margin-bottom:4px;">Weekly <span style="color:var(--gold)">Schedule</span></div>
+      <div class="hours-grid" id="hours-grid"></div>
+    </div>
+    <div class="hours-section">
+      <div class="page-title" style="font-size:1.1rem;margin-bottom:16px;">Librarian <span style="color:var(--gold)">Staff</span></div>
+      <div class="librarian-grid" id="librarian-grid"></div>
+    </div>
+  </div>
+
+  <!-- ===== PAGE: ADMIN ===== -->
+  <div class="page" id="page-admin">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Admin <span>Panel</span></div>
+        <div class="page-sub">Manage books, donations, bookings, and staff</div>
+      </div>
+    </div>
+    <div class="admin-section">
+      <div class="admin-grid">
+        <!-- Add Book -->
+        <div class="admin-card">
+          <div class="admin-card-title">➕ Add Book</div>
+          <input class="admin-input" id="a-title" placeholder="Book Title *">
+          <input class="admin-input" id="a-author" placeholder="Author">
+          <input class="admin-input" id="a-year" placeholder="Year">
+          <input class="admin-input" id="a-category" placeholder="Category">
+          <input class="admin-input" id="a-cover" placeholder="Cover Image URL">
+          <input class="admin-input" id="a-readlink" placeholder="Read Link (optional)">
+          <select class="admin-input" id="a-status"><option>Available</option><option>Borrowed</option></select>
+          <button class="admin-btn green" onclick="adminAddBook()">Add Book</button>
+          <button class="admin-btn red" onclick="adminDeleteBook()">Delete by Title</button>
+        </div>
+        <!-- Update Librarian Status -->
+        <div class="admin-card">
+          <div class="admin-card-title">👤 Update Staff Status</div>
+          <select class="admin-input" id="a-lib-select"></select>
+          <select class="admin-input" id="a-lib-status">
+            <option value="available">Available</option>
+            <option value="unavailable">Unavailable / On Leave</option>
+          </select>
+          <input class="admin-input" id="a-lib-schedule" placeholder="Schedule note (e.g. Mon–Fri 8AM–5PM)">
+          <button class="admin-btn blue" onclick="updateLibrarianStatus()">Update Status</button>
+        </div>
+        <!-- Stats -->
+        <div class="admin-card">
+          <div class="admin-card-title">📊 Quick Stats</div>
+          <div style="display:grid;gap:10px;" id="admin-stats"></div>
+        </div>
+      </div>
+      <!-- Pending Book Suggestions -->
+      <div class="admin-card-title" style="margin-bottom:12px;">📬 Pending Book Suggestions</div>
+      <div id="admin-pending-list" style="margin-bottom:32px;"></div>
+      <!-- Pending Donations -->
+      <div class="admin-card-title" style="margin-bottom:12px;">📦 Pending Donations</div>
+      <div id="admin-donations-list" style="margin-bottom:32px;"></div>
+      <!-- All Bookings -->
+      <div class="admin-card-title" style="margin-bottom:12px;">🏛️ All Room Bookings</div>
+      <div id="admin-bookings-list"></div>
+    </div>
+  </div>
+
+</div><!-- /app -->
+
+<!-- Modal -->
+<div id="modal-overlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-inner">
+      <img class="modal-cover" id="m-cover" src="" alt="">
+      <div class="modal-info">
+        <div class="modal-title" id="m-title"></div>
+        <div class="modal-author" id="m-author"></div>
+        <div class="modal-meta">
+          <p><strong>Year:</strong> <span id="m-year"></span></p>
+          <p><strong>Category:</strong> <span id="m-cat"></span></p>
+          <p><strong>Condition:</strong> <span id="m-cond"></span></p>
+          <p><strong>Status:</strong> <span id="m-status"></span></p>
+        </div>
+        <div class="modal-actions">
+          <button class="btn-primary" id="m-read-btn" onclick="startReading()" style="display:none">📖 Start Reading Online</button>
+          <button class="btn-secondary" id="m-shelf-btn" onclick="addToShelfFromModal()">+ Add to My Shelf</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container"></div>
+
+<script src="../shared/data.js"></script>
+<script src="../shared/common.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
