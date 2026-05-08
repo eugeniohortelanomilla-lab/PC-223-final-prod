@@ -142,7 +142,7 @@ function renderBooks() {
   buildCatFilters();
   const search = (document.getElementById('book-search').value || '').toLowerCase();
   let list = books.filter(b => {
-    const matchCat = activeCatFilter === 'All' || b.category === b.category;
+    const matchCat = activeCatFilter === 'All' || b.category === activeCatFilter;
     const matchSearch = b.title.toLowerCase().includes(search) || b.author.toLowerCase().includes(search);
     return matchCat && matchSearch;
   });
@@ -160,6 +160,7 @@ function renderBooks() {
         <div class="book-title">${book.title}</div>
         <div class="book-author">${book.author} · ${book.year}</div>
         <span class="book-status ${book.status === 'Available' ? 'available' : 'borrowed'}">${book.status === 'Available' ? '✓' : '✕'} ${book.status}</span>
+        ${book.status === 'Borrowed' && book.borrower ? `<div class="book-borrower">Borrowed by ${book.borrower}</div>` : ''}
       </div>`;
     div.onclick = () => openModal(realIdx);
     grid.appendChild(div);
@@ -180,15 +181,57 @@ function openModal(idx) {
   document.getElementById('m-cat').textContent = b.category;
   document.getElementById('m-cond').textContent = b.condition || 'Unknown';
   document.getElementById('m-status').textContent = b.status;
+  document.getElementById('m-borrower').textContent = b.borrower ? `Borrowed by ${b.borrower}` : '';
+  document.getElementById('m-borrowed-at').textContent = b.borrowedAt ? `Borrowed on ${b.borrowedAt}` : '';
   const readBtn = document.getElementById('m-read-btn');
   readBtn.style.display = (b.readLink || b.readlink) ? 'block' : 'none';
+  updateBorrowButton(b);
   document.getElementById('modal-overlay').classList.add('open');
+}
+function updateBorrowButton(b) {
+  const borrowBtn = document.getElementById('m-borrow-btn');
+  if (!borrowBtn) return;
+  if (b.status === 'Available' && !isAdmin) {
+    borrowBtn.style.display = 'inline-flex';
+    borrowBtn.className = 'btn-primary';
+    borrowBtn.textContent = '📚 Borrow this Book';
+    borrowBtn.onclick = borrowBook;
+  } else if (b.status === 'Borrowed' && (b.borrower === currentUser || isAdmin)) {
+    borrowBtn.style.display = 'inline-flex';
+    borrowBtn.className = 'btn-secondary';
+    borrowBtn.textContent = '↩️ Return Book';
+    borrowBtn.onclick = returnBook;
+  } else {
+    borrowBtn.style.display = 'none';
+  }
 }
 function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
 function startReading() {
   const b = books[currentBookIndex];
   const link = b.readLink || b.readlink;
   if (link) window.open(link, '_blank');
+}
+function borrowBook() {
+  const b = books[currentBookIndex];
+  if (!b || b.status !== 'Available') { toast('Book is not available for borrowing.', 'error'); return; }
+  b.status = 'Borrowed';
+  b.borrower = currentUser;
+  b.borrowedAt = new Date().toLocaleDateString();
+  saveBooks();
+  toast(`You have borrowed "${b.title}".`, 'success');
+  renderBooks();
+  openModal(currentBookIndex);
+}
+function returnBook() {
+  const b = books[currentBookIndex];
+  if (!b || b.status !== 'Borrowed') { toast('There is no borrow record for this book.', 'error'); return; }
+  b.status = 'Available';
+  delete b.borrower;
+  delete b.borrowedAt;
+  saveBooks();
+  toast(`"${b.title}" has been returned.`, 'success');
+  renderBooks();
+  openModal(currentBookIndex);
 }
 function addToShelfFromModal() {
   if (currentBookIndex === null) return;
