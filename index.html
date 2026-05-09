@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -74,6 +74,7 @@
     </div>
     <div class="nav-tabs" id="nav-tabs">
       <button class="nav-tab active" data-page="library" onclick="switchPage('library')">📚 Library</button>
+      <button class="nav-tab reader-only" data-page="borrow" onclick="switchPage('borrow')" id="tab-borrow" style="display:none">📖 Borrow Books</button>
       <button class="nav-tab" data-page="booking" onclick="switchPage('booking')" id="tab-booking">🏛️ Graduate Room</button>
       <button class="nav-tab" data-page="chess" onclick="switchPage('chess')">♟️ Chess</button>
       <button class="nav-tab" data-page="donate" onclick="switchPage('donate')">📦 Donate</button>
@@ -110,6 +111,109 @@
       </div>
     </div>
     <div class="book-grid" id="book-grid"></div>
+  </div>
+
+  <!-- ===== PAGE: BORROW BOOKS ===== -->
+  <div class="page" id="page-borrow">
+    <div class="page-header">
+      <div>
+        <div class="page-title">Borrow a <span>Book</span></div>
+        <div class="page-sub">Fill in your details to request a book from the library</div>
+      </div>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="info-row">
+      <div class="info-card">
+        <div class="info-card-label">Loan Period</div>
+        <div class="info-card-value">3 Days</div>
+        <div class="info-card-sub">Renewable if no queue</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Max Books</div>
+        <div class="info-card-value">2 Books</div>
+        <div class="info-card-sub">Per borrower at a time</div>
+      </div>
+      <div class="info-card">
+        <div class="info-card-label">Late Return Fee</div>
+        <div class="info-card-value">₱5 / day</div>
+        <div class="info-card-sub">Per overdue book</div>
+      </div>
+    </div>
+
+    <!-- Borrow Form -->
+    <div class="form-section">
+      <div class="form-card">
+        <div class="form-title">📋 Borrower Information</div>
+
+        <!-- Role selector -->
+        <div class="form-row">
+          <div class="form-group">
+            <label>I am a</label>
+            <select id="br-role" onchange="toggleSectionField()">
+              <option value="Student">Student</option>
+              <option value="Faculty">Faculty / Staff</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="br-name" placeholder="e.g. Juan dela Cruz">
+          </div>
+          <div class="form-group">
+            <label>ID Number</label>
+            <input type="text" id="br-id" placeholder="e.g. 2024-00001">
+          </div>
+        </div>
+
+        <!-- Section — only visible for students -->
+        <div class="form-row" id="br-section-row">
+          <div class="form-group">
+            <label>Course & Year</label>
+            <input type="text" id="br-course" placeholder="e.g. BSIT 3rd Year">
+          </div>
+          <div class="form-group">
+            <label>Section</label>
+            <input type="text" id="br-section" placeholder="e.g. BSIT-3A">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group" style="flex:2">
+            <label>Book Title to Borrow</label>
+            <input type="text" id="br-book" placeholder="Type the exact book title..." list="book-suggestions">
+            <datalist id="book-suggestions"></datalist>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Date Needed</label>
+            <input type="date" id="br-date">
+          </div>
+          <div class="form-group">
+            <label>Purpose</label>
+            <select id="br-purpose">
+              <option>Academic Research</option>
+              <option>Thesis / Dissertation</option>
+              <option>Class Requirement</option>
+              <option>Personal Reading</option>
+              <option>Other</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="submit-btn" onclick="submitBorrowRequest()">📖 Submit Borrow Request</button>
+      </div>
+    </div>
+
+    <!-- My Borrow History -->
+    <div class="form-section" id="my-borrows-wrap" style="display:none;">
+      <div class="page-title" style="font-size:1.2rem; margin-bottom:16px;">My <span style="color:var(--gold)">Borrow Requests</span></div>
+      <div id="my-borrows-list"></div>
+    </div>
   </div>
 
   <!-- ===== PAGE: BOOKING ===== -->
@@ -313,6 +417,11 @@
           <input class="admin-input" id="a-lib-schedule" placeholder="Schedule note (e.g. Mon–Fri 8AM–5PM)">
           <button class="admin-btn blue" onclick="updateLibrarianStatus()">Update Status</button>
         </div>
+        <!-- Borrower Records -->
+        <div class="admin-card" style="grid-column: span 2; min-height:360px;">
+          <div class="admin-card-title">📖 Borrower Records</div>
+          <div style="display:grid;gap:10px;" id="admin-borrowers-list"></div>
+        </div>
         <!-- Stats -->
         <div class="admin-card">
           <div class="admin-card-title">📊 Quick Stats</div>
@@ -436,6 +545,10 @@ function saveChessState(c) { localStorage.setItem('lib_chess', JSON.stringify(c)
 function getUsers() { return JSON.parse(localStorage.getItem('lib_users')) || []; }
 function saveUsers(u) { localStorage.setItem('lib_users', JSON.stringify(u)); }
 
+// ---- Borrow Requests ----
+function getBorrowRequests() { return JSON.parse(localStorage.getItem('lib_borrow_requests')) || []; }
+function saveBorrowRequests(r) { localStorage.setItem('lib_borrow_requests', JSON.stringify(r)); }
+
 // ============================================================
 // AUTH
 // ============================================================
@@ -491,6 +604,7 @@ function startApp() {
   document.getElementById('app').classList.add('active');
   document.getElementById('nav-username').textContent = currentUser;
   document.getElementById('tab-admin').style.display = isAdmin ? 'inline-block' : 'none';
+  document.getElementById('tab-borrow').style.display = !isAdmin ? 'inline-block' : 'none';
   switchPage('library');
   renderHours();
   renderLibrarians();
@@ -523,9 +637,10 @@ function switchPage(id) {
   document.getElementById('page-' + id).classList.add('active');
   document.querySelector(`[data-page="${id}"]`).classList.add('active');
   if (id === 'library') renderBooks();
-  if (id === 'admin') { renderAdminPending(); renderAdminDonations(); renderAdminBookings(); renderAdminStats(); }
+  if (id === 'admin') { renderAdminPending(); renderAdminDonations(); renderAdminBookings(); renderAdminStats(); renderAdminBorrowers(); }
   if (id === 'booking') renderMyBookings();
   if (id === 'donate' && isAdmin) renderAdminDonationsInDonate();
+  if (id === 'borrow') { populateBookSuggestions(); renderMyBorrows(); }
 }
 
 // ============================================================
@@ -614,6 +729,117 @@ function addToShelfFromModal() {
   localStorage.setItem(key, JSON.stringify(shelf));
   toast(`"${b.title}" added to your shelf!`, 'success');
   closeModal();
+}
+
+// ============================================================
+// BORROW BOOKS
+// ============================================================
+
+// Show/hide Section field depending on role
+function toggleSectionField() {
+  const role = document.getElementById('br-role').value;
+  const row = document.getElementById('br-section-row');
+  row.style.display = role === 'Student' ? 'flex' : 'none';
+}
+
+// Populate the book title datalist so users can pick from available books
+function populateBookSuggestions() {
+  const dl = document.getElementById('book-suggestions');
+  if (!dl) return;
+  dl.innerHTML = books
+    .filter(b => b.status === 'Available')
+    .map(b => `<option value="${b.title}">`)
+    .join('');
+}
+
+// Submit a borrow request
+function submitBorrowRequest() {
+  const role    = document.getElementById('br-role').value;
+  const name    = document.getElementById('br-name').value.trim();
+  const idNum   = document.getElementById('br-id').value.trim();
+  const course  = document.getElementById('br-course') ? document.getElementById('br-course').value.trim() : '';
+  const section = document.getElementById('br-section') ? document.getElementById('br-section').value.trim() : '';
+  const bookTitle = document.getElementById('br-book').value.trim();
+  const date    = document.getElementById('br-date').value;
+  const purpose = document.getElementById('br-purpose').value;
+
+  // Validation
+  if (!name || !idNum || !bookTitle || !date) {
+    toast('Please fill in all required fields.', 'error'); return;
+  }
+  if (role === 'Student' && (!course || !section)) {
+    toast('Please fill in your Course, Year, and Section.', 'error'); return;
+  }
+
+  // Check if book exists and is available
+  const book = books.find(b => b.title.toLowerCase() === bookTitle.toLowerCase());
+  if (!book) {
+    toast('Book not found. Please check the title and try again.', 'error'); return;
+  }
+  if (book.status !== 'Available') {
+    toast('Sorry, this book is currently borrowed. Please check back later.', 'error'); return;
+  }
+
+  // Check if user already has 5 active borrows
+  const myActive = getBorrowRequests().filter(r =>
+    r.user === currentUser && (r.status === 'Pending' || r.status === 'Approved')
+  );
+  if (myActive.length >= 5) {
+    toast('You already have 5 active borrow requests. Please return a book first.', 'error'); return;
+  }
+
+  // Save request
+  const requests = getBorrowRequests();
+  requests.push({
+    id: Date.now(),
+    user: currentUser,
+    role,
+    name,
+    idNum,
+    course: role === 'Student' ? course : '—',
+    section: role === 'Student' ? section : '—',
+    bookTitle: book.title,
+    bookAuthor: book.author,
+    date,
+    purpose,
+    status: 'Pending',
+    submittedAt: new Date().toLocaleString()
+  });
+  saveBorrowRequests(requests);
+
+  // Notify admin
+  localStorage.setItem('notif_admin', `📖 New borrow request: "${book.title}" by ${name}`);
+
+  toast(`Borrow request for "${book.title}" submitted! Awaiting librarian approval.`, 'success');
+
+  // Clear form
+  ['br-name','br-id','br-course','br-section','br-book'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+
+  renderMyBorrows();
+}
+
+// Render this user's borrow history below the form
+function renderMyBorrows() {
+  const wrap = document.getElementById('my-borrows-wrap');
+  const list = document.getElementById('my-borrows-list');
+  if (!wrap || !list) return;
+
+  const myRequests = getBorrowRequests().filter(r => r.user === currentUser);
+  if (!myRequests.length) { wrap.style.display = 'none'; return; }
+
+  wrap.style.display = 'block';
+  list.innerHTML = myRequests.map(r => `
+    <div class="pending-card" style="margin-bottom:12px;">
+      <h4 style="font-size:1rem;margin-bottom:4px;">📖 ${r.bookTitle}</h4>
+      <p style="font-size:.85rem;color:rgba(240,236,228,.6);margin-bottom:8px;">Status: <span style="color:${r.status === 'Approved' ? '#4ade80' : r.status === 'Rejected' ? '#f87171' : '#fbbf24'}">${r.status}</span></p>
+      <p style="font-size:.8rem;color:rgba(240,236,228,.5);">Submitted: ${r.submittedAt}</p>
+      ${r.approvedAt ? `<p style="font-size:.8rem;color:rgba(240,236,228,.5);">Approved: ${r.approvedAt}</p>` : ''}
+      ${r.returnedAt ? `<p style="font-size:.8rem;color:rgba(240,236,228,.5);">Returned: ${r.returnedAt}</p>` : ''}
+    </div>
+  `).join('');
 }
 
 // ============================================================
@@ -939,10 +1165,12 @@ function renderAdminStats() {
   const pending = getPending().length;
   const donations = getDonations().filter(d => d.status === 'Pending').length;
   const bookings = getBookings().length;
+  const borrowReqs = getBorrowRequests().filter(r => r.status === 'Pending').length;
   el.innerHTML = [
     ['📚 Total Books', books.length],
     ['✅ Available', available],
     ['📖 Borrowed', borrowed],
+    ['📋 Pending Borrow Requests', borrowReqs],
     ['📬 Pending Suggestions', pending],
     ['📦 Pending Donations', donations],
     ['🏛️ Room Bookings', bookings]
@@ -951,6 +1179,103 @@ function renderAdminStats() {
       <span style="font-size:.88rem;color:rgba(240,236,228,.6)">${label}</span>
       <span style="font-weight:700;color:var(--gold-light)">${val}</span>
     </div>`).join('');
+}
+
+function renderAdminBorrowers() {
+  const el = document.getElementById('admin-borrowers-list');
+  if (!el) return;
+  const requests = getBorrowRequests();
+  if (!requests.length) {
+    el.innerHTML = '<p style="font-size:.8rem;color:rgba(240,236,228,.4);text-align:center;padding:20px;">No borrow requests yet.</p>';
+    return;
+  }
+  el.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;font-size:.88rem;">
+      <thead>
+        <tr style="background:rgba(255,255,255,.05);">
+          <th style="padding:12px 8px;text-align:left;border-bottom:1px solid var(--border);">Book</th>
+          <th style="padding:12px 8px;text-align:left;border-bottom:1px solid var(--border);">Borrower</th>
+          <th style="padding:12px 8px;text-align:left;border-bottom:1px solid var(--border);">Status</th>
+          <th style="padding:12px 8px;text-align:left;border-bottom:1px solid var(--border);">Submitted</th>
+          <th style="padding:12px 8px;text-align:left;border-bottom:1px solid var(--border);">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${requests.map(r => {
+          const statusColor = r.status === 'Approved' ? '#4ade80' : r.status === 'Rejected' ? '#f87171' : r.status === 'Pending' ? '#fbbf24' : '#60a5fa';
+          const actions = r.status === 'Pending' ? `
+            <button class="approve-btn" onclick="approveBorrow(${r.id}); event.stopPropagation();">✅ Accept</button>
+            <button class="reject-btn" onclick="rejectBorrow(${r.id}); event.stopPropagation();">❌ Reject</button>
+          ` : r.status === 'Approved' ? `
+            <button class="approve-btn" style="background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.3);color:#a5b4fc;" onclick="markReturned(${r.id}); event.stopPropagation();">📦 Mark Returned</button>
+          ` : `<span style="font-size:.78rem;color:rgba(240,236,228,.35);">—</span>`;
+          return `
+            <tr style="border-bottom:1px solid rgba(255,255,255,.05);">
+              <td style="padding:12px 8px;vertical-align:top;">
+                <div style="font-weight:600;">${r.bookTitle}</div>
+                <div style="font-size:.75rem;color:rgba(240,236,228,.5);">by ${r.bookAuthor}</div>
+              </td>
+              <td style="padding:12px 8px;vertical-align:top;">
+                <div style="font-weight:600;">${r.name}</div>
+                <div style="font-size:.75rem;color:rgba(240,236,228,.5);">${r.idNum} · ${r.role}</div>
+              </td>
+              <td style="padding:12px 8px;vertical-align:top;"><span style="color:${statusColor};font-weight:700;text-transform:uppercase;letter-spacing:.05em;">${r.status}</span></td>
+              <td style="padding:12px 8px;vertical-align:top;">${r.submittedAt}</td>
+              <td style="padding:12px 8px;vertical-align:top;min-width:170px;">${actions}</td>
+            </tr>`;
+        }).join('')}
+      </tbody>
+    </table>`;
+}
+
+function approveBorrow(id) {
+  const requests = getBorrowRequests();
+  const request = requests.find(r => r.id === id);
+  if (!request) return;
+  const book = books.find(b => b.title.toLowerCase() === request.bookTitle.toLowerCase());
+  if (!book || book.status !== 'Available') {
+    toast('Cannot approve: book is no longer available.', 'error');
+    return;
+  }
+  book.status = 'Borrowed';
+  book.borrowerName = request.name;
+  book.borrowerId = request.idNum;
+  saveBooks();
+  request.status = 'Approved';
+  request.approvedAt = new Date().toLocaleString();
+  saveBorrowRequests(requests);
+  localStorage.setItem(`notif_${request.user}`, `✅ Your borrow request for "${request.bookTitle}" has been approved.`);
+  toast(`Request approved for "${request.bookTitle}".`, 'success');
+  renderAdminBorrowers(); renderAdminStats(); renderBooks(); renderMyBorrows();
+}
+
+function rejectBorrow(id) {
+  const requests = getBorrowRequests();
+  const request = requests.find(r => r.id === id);
+  if (!request) return;
+  const reason = prompt(`Reason for rejecting "${request.bookTitle}"?`, 'Book is currently unavailable.');
+  if (reason === null) return;
+  request.status = 'Rejected';
+  request.rejectedAt = new Date().toLocaleString();
+  request.rejectionReason = reason;
+  saveBorrowRequests(requests);
+  localStorage.setItem(`notif_${request.user}`, `❌ Your borrow request for "${request.bookTitle}" was rejected. Reason: ${reason}`);
+  toast(`Request rejected for "${request.bookTitle}".`, 'info');
+  renderAdminBorrowers(); renderAdminStats(); renderMyBorrows();
+}
+
+function markReturned(id) {
+  const requests = getBorrowRequests();
+  const request = requests.find(r => r.id === id);
+  if (!request) return;
+  const book = books.find(b => b.title.toLowerCase() === request.bookTitle.toLowerCase());
+  if (book) { book.status = 'Available'; delete book.borrowerName; delete book.borrowerId; saveBooks(); }
+  request.status = 'Returned';
+  request.returnedAt = new Date().toLocaleString();
+  saveBorrowRequests(requests);
+  localStorage.setItem(`notif_${request.user}`, `📦 Your borrow request for "${request.bookTitle}" has been marked returned.`);
+  toast(`"${request.bookTitle}" marked returned.`, 'success');
+  renderAdminBorrowers(); renderAdminStats(); renderBooks(); renderMyBorrows();
 }
 
 // ============================================================
