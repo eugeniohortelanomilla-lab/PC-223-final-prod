@@ -1,6 +1,7 @@
 // ============================================================
 // STATE
 // ============================================================
+// ============================================================
 let currentUser = null;
 let isAdmin = false;
 let books = [];
@@ -9,9 +10,23 @@ let activeCatFilter = 'All';
 let currentBookIndex = null;
 let selectedChessId = null;
 
+function ensureDefaultUsers() {
+  let users = JSON.parse(localStorage.getItem('lib_users'));
+  if (!Array.isArray(users)) {
+    users = JSON.parse(JSON.stringify(USERS_DEFAULT));
+  }
+  const hasAdmin = users.some(u => u.username === 'admin' && u.role === 'admin');
+  if (!hasAdmin) {
+    users.unshift({id:1, username:'admin', password:'admin123', name:'Administrator', role:'admin'});
+  }
+  localStorage.setItem('lib_users', JSON.stringify(users));
+  return users;
+}
+
 function loadState() {
   books = JSON.parse(localStorage.getItem('lib_books')) || JSON.parse(JSON.stringify(BOOKS_DEFAULT));
   librarians = JSON.parse(localStorage.getItem('lib_librarians')) || JSON.parse(JSON.stringify(LIBRARIANS_DEFAULT));
+  ensureDefaultUsers();
 }
 function saveBooks()      { localStorage.setItem('lib_books', JSON.stringify(books)); }
 function saveLibrarians() { localStorage.setItem('lib_librarians', JSON.stringify(librarians)); }
@@ -23,7 +38,19 @@ function getBookings()    { return JSON.parse(localStorage.getItem('lib_bookings
 function saveBookings(b)  { localStorage.setItem('lib_bookings',   JSON.stringify(b)); }
 function getChessState()  { return JSON.parse(localStorage.getItem('lib_chess'))      || {}; }
 function saveChessState(c){ localStorage.setItem('lib_chess',      JSON.stringify(c)); }
-function getUsers()       { return JSON.parse(localStorage.getItem('lib_users'))      || []; }
+function getUsers() {
+  let users = JSON.parse(localStorage.getItem('lib_users'));
+  if (!Array.isArray(users)) {
+    users = JSON.parse(JSON.stringify(USERS_DEFAULT));
+    localStorage.setItem('lib_users', JSON.stringify(users));
+  }
+  const hasAdmin = users.some(u => u.username === 'admin' && u.role === 'admin');
+  if (!hasAdmin) {
+    users.unshift({id:1, username:'admin', password:'admin123', name:'Administrator', role:'admin'});
+    localStorage.setItem('lib_users', JSON.stringify(users));
+  }
+  return users;
+}
 function saveUsers(u)     { localStorage.setItem('lib_users',      JSON.stringify(u)); }
 
 // ---- Borrow Requests (NEW) ----
@@ -37,18 +64,17 @@ function login() {
   const u = document.getElementById('l-user').value.trim();
   const p = document.getElementById('l-pass').value;
   document.getElementById('login-err').textContent = '';
-  if (u === 'admin' && p === '123') {
-    currentUser = 'admin'; isAdmin = true;
+  const users = getUsers();
+  const found = users.find(x => x.username === u && x.password === p);
+  if (found) {
+    currentUser = found.username;
+    isAdmin = found.role === 'admin';
+    localStorage.setItem('currentUser', currentUser);
+    localStorage.setItem('isAdmin', isAdmin);
+    localStorage.setItem('userId', found.id || '');
     startApp();
   } else {
-    const users = getUsers();
-    const found = users.find(x => x.username === u && x.password === p);
-    if (found) {
-      currentUser = u; isAdmin = false;
-      startApp();
-    } else {
-      document.getElementById('login-err').textContent = 'Invalid username or password.';
-    }
+    document.getElementById('login-err').textContent = 'Invalid username or password.';
   }
 }
 
@@ -59,7 +85,7 @@ function registerAccount() {
   if (!u || !p || !n) { document.getElementById('reg-err').textContent = 'All fields required.'; return; }
   const users = getUsers();
   if (users.find(x => x.username === u)) { document.getElementById('reg-err').textContent = 'Username already taken.'; return; }
-  users.push({username:u, password:p, name:n});
+  users.push({id: Date.now(), username:u, password:p, name:n, role:'Student'});
   saveUsers(users);
   toast('Account created! You can now log in.', 'success');
   showLoginPage();
@@ -69,6 +95,8 @@ function logout() {
   currentUser = null; isAdmin = false;
   localStorage.removeItem('currentUser');
   localStorage.removeItem('isAdmin');
+  localStorage.removeItem('userId');
+  localStorage.removeItem('user');
   window.location.href = '../index.html';
 }
 
@@ -87,11 +115,8 @@ function startApp() {
   loadState();
   localStorage.setItem('currentUser', currentUser);
   localStorage.setItem('isAdmin', isAdmin);
-  if (isAdmin) {
-    window.location.href = 'admin/index.html';
-  } else {
-    window.location.href = 'reader/index.html';
-  }
+  const destination = isAdmin ? 'admin/admin.html' : 'reader/reader.html';
+  window.location.href = destination;
 }
 
 // ============================================================

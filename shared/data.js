@@ -41,3 +41,7 @@ const CHESS_SETS = [
   {id:3,name:'Chess Set C',icon:'♟️'},
   {id:4,name:'Chess Set D',icon:'♟️'}
 ];
+
+const USERS_DEFAULT = [
+  {id:1, username:'admin', password:'admin123', name:'Administrator', role:'admin'}
+];
