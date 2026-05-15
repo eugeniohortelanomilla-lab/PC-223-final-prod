@@ -16,23 +16,38 @@ const BOOKS_DEFAULT = [
   {"title":"Wuthering Heights","author":"Emily Brontë","year":"1847","category":"Classic","condition":"Mint","status":"Available","cover":"https://covers.openlibrary.org/b/id/8255334-L.jpg"},
   {"title":"The Catcher in the Rye","author":"J.D. Salinger","year":"1951","category":"Literature","condition":"Good","status":"Available","cover":"https://covers.openlibrary.org/b/id/15172466-L.jpg"},
   {"title":"Crime and Punishment","author":"Fyodor Dostoevsky","year":"1866","category":"Psychological Fiction","condition":"Needs Restoration","status":"Available","cover":"https://covers.openlibrary.org/b/id/12622046-L.jpg"},
-  {"title":"Brave New World","author":"Aldous Huxley","year":"1932","category":"Dystopian","condition":"Yellowed Pages","status":"Borrowed","cover":"https://covers.openlibrary.org/b/id/14846947-L.jpg"}
+  {"title":"Brave New World","author":"Aldous Huxley","year":"1932","category":"Dystopian","condition":"Yellowed Pages","status":"Borrowed","cover":"https://covers.openlibrary.org/b/id/14846947-L.jpg"},
+  {"title":"Introduction to Information Technology","author":"Various Authors","year":"2020","category":"Industrial/Information Technology","condition":"Good","status":"Available","cover":"https://covers.openlibrary.org/b/id/15121528-L.jpg"},
+  {"title":"Industrial Engineering Handbook","author":"Various Authors","year":"2018","category":"Industrial Engineering","condition":"Excellent","status":"Available","cover":"https://covers.openlibrary.org/b/id/15121528-L.jpg"},
+  {"title":"Hospitality Management Principles","author":"Various Authors","year":"2019","category":"Hospitality Management","condition":"Good","status":"Available","cover":"https://covers.openlibrary.org/b/id/15121528-L.jpg"},
+  {"title":"Fisheries Science","author":"Various Authors","year":"2021","category":"Fisheries","condition":"Excellent","status":"Available","cover":"https://covers.openlibrary.org/b/id/15121528-L.jpg"},
+  {"title":"Modern Fiction Stories","author":"Various Authors","year":"2022","category":"Fiction","condition":"Good","status":"Available","cover":"https://covers.openlibrary.org/b/id/15121528-L.jpg"},
+  {"title":"General Reference Encyclopedia","author":"Various Authors","year":"2020","category":"General reference","condition":"Excellent","status":"Available","cover":"https://covers.openlibrary.org/b/id/15121528-L.jpg"},
+  {"title":"Oxford English Dictionary","author":"Oxford University Press","year":"2023","category":"Dictionaries","condition":"Mint","status":"Available","cover":"https://covers.openlibrary.org/b/id/15121528-L.jpg"},
+  {"title":"Research Methods in Social Sciences","author":"Various Authors","year":"2017","category":"Research books","condition":"Good","status":"Available","cover":"https://covers.openlibrary.org/b/id/15121528-L.jpg"}
 ];
 
 const HOURS_DATA = [
-  {day:'Monday',open:'7:00 AM',close:'6:00 PM',closed:false},
-  {day:'Tuesday',open:'7:00 AM',close:'6:00 PM',closed:false},
-  {day:'Wednesday',open:'7:00 AM',close:'6:00 PM',closed:false},
-  {day:'Thursday',open:'7:00 AM',close:'6:00 PM',closed:false},
-  {day:'Friday',open:'7:00 AM',close:'5:00 PM',closed:false},
+  {day:'Monday',open:'8:00 AM',close:'6:00 PM',closed:false},
+  {day:'Tuesday',open:'8:00 AM',close:'6:00 PM',closed:false},
+  {day:'Wednesday',open:'8:00 AM',close:'6:00 PM',closed:false},
+  {day:'Thursday',open:'8:00 AM',close:'6:00 PM',closed:false},
+  {day:'Friday',open:'8:00 AM',close:'6:00 PM',closed:false},
   {day:'Saturday',open:'8:00 AM',close:'12:00 PM',closed:false},
   {day:'Sunday',open:'',close:'',closed:true}
 ];
 
 const LIBRARIANS_DEFAULT = [
-  {name:'Ms. Ana Reyes',role:'Head Librarian',status:'available',schedule:'Mon–Fri  8:00 AM – 5:00 PM',initial:'AR'},
-  {name:'Mr. Carlo Dizon',role:'Assistant Librarian',status:'available',schedule:'Mon–Sat  8:00 AM – 5:00 PM',initial:'CD'},
-  {name:'Ms. Luz Bautista',role:'Reference Librarian',status:'unavailable',schedule:'Currently on leave',initial:'LB'}
+  {name:'MELANY M. MANLANGIT',role:'Librarian',status:'available',schedule:'Mon–Fri  8:00 AM – 6:00 PM',initial:'MM'},
+  {name:'ANNALIE T. SALAZAR',role:'Staff',status:'available',schedule:'Mon–Fri  8:00 AM – 6:00 PM',initial:'AT'},
+  {name:'LEONADEL V. FERER',role:'Staff',status:'available',schedule:'Mon–Fri  8:00 AM – 6:00 PM',initial:'LV'},
+  {name:'JANELLE R. PARAN',role:'Staff',status:'available',schedule:'Mon–Fri  8:00 AM – 6:00 PM',initial:'JR'},
+  {name:'LEO A. DELA PENA',role:'Library Assistant',status:'available',schedule:'Mon–Fri  8:00 AM – 6:00 PM',initial:'LA'},
+  {name:'ARIAL A. MAGNO',role:'Library Assistant',status:'available',schedule:'Mon–Fri  8:00 AM – 6:00 PM',initial:'AM'}
+];
+
+const USERS_DEFAULT = [
+  {id:1, username:'admin', password:'admin123', name:'Administrator', role:'admin'}
 ];
 
 const CHESS_SETS = [
@@ -40,8 +55,4 @@ const CHESS_SETS = [
   {id:2,name:'Chess Set B',icon:'♟️'},
   {id:3,name:'Chess Set C',icon:'♟️'},
   {id:4,name:'Chess Set D',icon:'♟️'}
-];
-
-const USERS_DEFAULT = [
-  {id:1, username:'admin', password:'admin123', name:'Administrator', role:'admin'}
 ];

@@ -11,7 +11,12 @@ let currentBookIndex = null;
 let selectedChessId = null;
 
 function ensureDefaultUsers() {
-  let users = JSON.parse(localStorage.getItem('lib_users'));
+  let users;
+  try {
+    users = JSON.parse(localStorage.getItem('lib_users'));
+  } catch (err) {
+    users = null;
+  }
   if (!Array.isArray(users)) {
     users = JSON.parse(JSON.stringify(USERS_DEFAULT));
   }
@@ -25,7 +30,8 @@ function ensureDefaultUsers() {
 
 function loadState() {
   books = JSON.parse(localStorage.getItem('lib_books')) || JSON.parse(JSON.stringify(BOOKS_DEFAULT));
-  librarians = JSON.parse(localStorage.getItem('lib_librarians')) || JSON.parse(JSON.stringify(LIBRARIANS_DEFAULT));
+  librarians = JSON.parse(JSON.stringify(LIBRARIANS_DEFAULT));
+  localStorage.setItem('lib_librarians', JSON.stringify(librarians));
   ensureDefaultUsers();
 }
 function saveBooks()      { localStorage.setItem('lib_books', JSON.stringify(books)); }
@@ -39,7 +45,12 @@ function saveBookings(b)  { localStorage.setItem('lib_bookings',   JSON.stringif
 function getChessState()  { return JSON.parse(localStorage.getItem('lib_chess'))      || {}; }
 function saveChessState(c){ localStorage.setItem('lib_chess',      JSON.stringify(c)); }
 function getUsers() {
-  let users = JSON.parse(localStorage.getItem('lib_users'));
+  let users;
+  try {
+    users = JSON.parse(localStorage.getItem('lib_users'));
+  } catch (err) {
+    users = null;
+  }
   if (!Array.isArray(users)) {
     users = JSON.parse(JSON.stringify(USERS_DEFAULT));
     localStorage.setItem('lib_users', JSON.stringify(users));
@@ -354,19 +365,54 @@ function returnChess(id) {
 // ============================================================
 // ROOM BOOKING
 // ============================================================
+const FACILITIES = {
+  'Graduate School Area': { capacity: '12 persons', capacitySub: 'Tables & whiteboards available', limit: '3 hours max', limitSub: 'Extendable if no conflict', times: ['8:00 AM – 11:00 AM', '11:00 AM – 2:00 PM', '2:00 PM – 5:00 PM'] },
+  'Computer and Internet Access Area (LAB)': { capacity: '10 computers', capacitySub: '30 mins per student', limit: '30 mins max', limitSub: 'Per session', times: ['8:00 AM – 8:30 AM', '8:30 AM – 9:00 AM', '9:00 AM – 9:30 AM', '9:30 AM – 10:00 AM', '10:00 AM – 10:30 AM', '10:30 AM – 11:00 AM', '11:00 AM – 11:30 AM', '11:30 AM – 12:00 PM', '12:00 PM – 12:30 PM', '12:30 PM – 1:00 PM', '1:00 PM – 1:30 PM', '1:30 PM – 2:00 PM', '2:00 PM – 2:30 PM', '2:30 PM – 3:00 PM', '3:00 PM – 3:30 PM', '3:30 PM – 4:00 PM', '4:00 PM – 4:30 PM', '4:30 PM – 5:00 PM', '5:00 PM – 5:30 PM', '5:30 PM – 6:00 PM'] },
+  'Photo Copy Area': { capacity: '1-2 persons', capacitySub: 'Depends on staff availability', limit: 'As needed', limitSub: 'Staff assisted', times: ['8:00 AM – 6:00 PM'] },
+  'Discussion Room 1': { capacity: '6 persons', capacitySub: 'Tables & chairs available', limit: '2 hours max', limitSub: 'Subject to availability', times: ['8:00 AM – 10:00 AM', '10:00 AM – 12:00 PM', '1:00 PM – 3:00 PM', '3:00 PM – 5:00 PM'] },
+  'Discussion Room 2': { capacity: '6 persons', capacitySub: 'Tables & chairs available', limit: '2 hours max', limitSub: 'Subject to availability', times: ['8:00 AM – 10:00 AM', '10:00 AM – 12:00 PM', '1:00 PM – 3:00 PM', '3:00 PM – 5:00 PM'] },
+  'Smart Room (AVR)': { capacity: '20 persons', capacitySub: 'Projector & audio system', limit: '3 hours max', limitSub: 'Extendable if no conflict', times: ['8:00 AM – 11:00 AM', '11:00 AM – 2:00 PM', '2:00 PM – 5:00 PM'] }
+};
+
+function updateFacilityInfo() {
+  const facility = document.getElementById('b-facility').value;
+  const timeSelect = document.getElementById('b-time');
+  const capacityEl = document.getElementById('facility-capacity');
+  const capacitySubEl = document.getElementById('facility-capacity-sub');
+  const limitEl = document.getElementById('facility-limit');
+  const limitSubEl = document.getElementById('facility-limit-sub');
+
+  if (!facility || !FACILITIES[facility]) {
+    timeSelect.innerHTML = '<option value="">Select a facility first</option>';
+    if (capacityEl) capacityEl.textContent = '—';
+    if (capacitySubEl) capacitySubEl.textContent = '—';
+    if (limitEl) limitEl.textContent = '—';
+    if (limitSubEl) limitSubEl.textContent = '—';
+    return;
+  }
+
+  const f = FACILITIES[facility];
+  timeSelect.innerHTML = '<option value="">Select a slot</option>' + f.times.map(t => `<option>${t}</option>`).join('');
+  if (capacityEl) capacityEl.textContent = f.capacity;
+  if (capacitySubEl) capacitySubEl.textContent = f.capacitySub;
+  if (limitEl) limitEl.textContent = f.limit;
+  if (limitSubEl) limitSubEl.textContent = f.limitSub;
+}
+
 function submitBooking() {
+  const facility = document.getElementById('b-facility').value;
   const name    = document.getElementById('b-name').value.trim();
   const sid     = document.getElementById('b-id').value.trim();
   const date    = document.getElementById('b-date').value;
   const time    = document.getElementById('b-time').value;
   const pax     = document.getElementById('b-pax').value;
   const purpose = document.getElementById('b-purpose').value;
-  if (!name || !sid || !date || !time || !pax) { toast('Please fill in all required fields.', 'error'); return; }
+  if (!facility || !name || !sid || !date || !time || !pax) { toast('Please fill in all required fields.', 'error'); return; }
   const bookings = getBookings();
-  bookings.push({id: Date.now(), user: currentUser, name, sid, date, time, pax, purpose, status:'Pending'});
+  bookings.push({id: Date.now(), user: currentUser, facility, name, sid, date, time, pax, purpose, status:'Pending'});
   saveBookings(bookings);
   toast('Booking submitted! Awaiting librarian confirmation.', 'success');
-  ['b-name','b-id','b-date','b-time','b-pax'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  ['b-facility','b-name','b-id','b-date','b-time','b-pax'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   renderMyBookings();
 }
 function renderMyBookings() {
@@ -383,7 +429,7 @@ function renderMyBookings() {
     div.innerHTML = `
       <div class="booking-icon">🏛️</div>
       <div class="booking-info">
-        <div class="booking-name">${b.name} — ${b.purpose}</div>
+        <div class="booking-name">${b.facility || 'Graduate Room'} — ${b.name} — ${b.purpose}</div>
         <div class="booking-meta">${b.date} · ${b.time} · ${b.pax} person(s) · ID: ${b.sid}</div>
       </div>
       <span class="booking-badge ${b.status === 'Confirmed' ? 'confirmed' : 'pending'}">${b.status}</span>

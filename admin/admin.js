@@ -255,7 +255,7 @@ function renderAdminBookings() {
   if (!bookings.length) { list.innerHTML = '<p style="color:rgba(240,236,228,.35);font-size:.85rem;">No bookings yet.</p>'; return; }
   list.innerHTML = bookings.map(b => `
     <div class="pending-card">
-      <div class="pending-info"><h4>${b.name} — ${b.purpose}</h4><p>${b.date} · ${b.time} · ${b.pax} person(s) · ID: ${b.sid}</p></div>
+      <div class="pending-info"><h4>${b.facility || 'Graduate Room'} — ${b.name} — ${b.purpose}</h4><p>${b.date} · ${b.time} · ${b.pax} person(s) · ID: ${b.sid}</p></div>
       <div class="pending-actions">
         ${b.status === 'Pending' ? `<button class="approve-btn" onclick="confirmBooking(${b.id})">Confirm</button>` : '<span style="color:#4ade80;font-size:.8rem;">✓ Confirmed</span>'}
         <button class="reject-btn" onclick="deleteBooking(${b.id})">Delete</button>
@@ -266,7 +266,7 @@ function renderAdminBookings() {
 function confirmBooking(id) {
   let bookings = getBookings();
   const b = bookings.find(x => x.id === id);
-  if (b) { b.status = 'Confirmed'; if (b.user) localStorage.setItem(`notif_${b.user}`, `✅ Your Graduate Room booking on ${b.date} (${b.time}) has been confirmed!`); }
+  if (b) { b.status = 'Confirmed'; if (b.user) localStorage.setItem(`notif_${b.user}`, `✅ Your ${b.facility || 'Graduate Room'} booking on ${b.date} (${b.time}) has been confirmed!`); }
   saveBookings(bookings); renderAdminBookings();
   toast('Booking confirmed.', 'success');
 }

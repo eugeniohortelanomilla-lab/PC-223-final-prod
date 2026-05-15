@@ -24,7 +24,7 @@
     <div class="nav-tabs" id="nav-tabs">
       <button class="nav-tab active" data-page="library" onclick="switchPage('library')">📚 Library</button>
       <button class="nav-tab" data-page="borrowers" onclick="switchPage('borrowers')">📖 Borrowers</button>
-      <button class="nav-tab" data-page="booking" onclick="switchPage('booking')">🏛️ Graduate Room</button>
+      <button class="nav-tab" data-page="booking" onclick="switchPage('booking')">🏛️ Facilities Booking</button>
       <button class="nav-tab" data-page="chess" onclick="switchPage('chess')">♟️ Chess</button>
       <button class="nav-tab" data-page="donate" onclick="switchPage('donate')">📦 Donate</button>
       <button class="nav-tab" data-page="hours" onclick="switchPage('hours')">🕐 Hours & Staff</button>
@@ -117,18 +117,31 @@
   <div class="page" id="page-booking">
     <div class="page-header">
       <div>
-        <div class="page-title">Graduate <span>Room</span> Booking</div>
-        <div class="page-sub">Reserve the graduate study room for group or individual sessions</div>
+        <div class="page-title">Facilities <span>Booking</span></div>
+        <div class="page-sub">Reserve library facilities and rooms</div>
       </div>
     </div>
     <div class="info-row">
-      <div class="info-card"><div class="info-card-label">Capacity</div><div class="info-card-value">12 persons</div><div class="info-card-sub">Tables & whiteboards available</div></div>
-      <div class="info-card"><div class="info-card-label">Session Limit</div><div class="info-card-value">3 hours max</div><div class="info-card-sub">Extendable if no conflict</div></div>
+      <div class="info-card"><div class="info-card-label">Capacity</div><div class="info-card-value" id="facility-capacity">12 persons</div><div class="info-card-sub" id="facility-capacity-sub">Tables & whiteboards available</div></div>
+      <div class="info-card"><div class="info-card-label">Session Limit</div><div class="info-card-value" id="facility-limit">3 hours max</div><div class="info-card-sub" id="facility-limit-sub">Extendable if no conflict</div></div>
       <div class="info-card"><div class="info-card-label">Booking Status</div><div class="info-card-value status-open" id="room-status-text">Open Today</div><div class="info-card-sub">Subject to availability</div></div>
     </div>
     <div class="form-section">
       <div class="form-card">
         <div class="form-title">📋 Reserve a Time Slot</div>
+        <div class="form-row">
+          <div class="form-group"><label>Facility</label>
+            <select id="b-facility" onchange="updateFacilityInfo()">
+              <option value="">Select a facility</option>
+              <option value="Graduate School Area">Graduate School Area</option>
+              <option value="Computer and Internet Access Area (LAB)">Computer and Internet Access Area (LAB)</option>
+              <option value="Photo Copy Area">Photo Copy Area</option>
+              <option value="Discussion Room 1">Discussion Room 1</option>
+              <option value="Discussion Room 2">Discussion Room 2</option>
+              <option value="Smart Room (AVR)">Smart Room (AVR)</option>
+            </select>
+          </div>
+        </div>
         <div class="form-row">
           <div class="form-group"><label>Full Name</label><input type="text" id="b-name" placeholder="Your full name"></div>
           <div class="form-group"><label>Student ID</label><input type="text" id="b-id" placeholder="e.g. 2024-00001"></div>
@@ -137,11 +150,7 @@
           <div class="form-group"><label>Date</label><input type="date" id="b-date"></div>
           <div class="form-group"><label>Time Slot</label>
             <select id="b-time">
-              <option value="">Select a slot</option>
-              <option>7:00 AM – 10:00 AM</option>
-              <option>10:00 AM – 1:00 PM</option>
-              <option>1:00 PM – 4:00 PM</option>
-              <option>4:00 PM – 6:00 PM</option>
+              <option value="">Select a facility first</option>
             </select>
           </div>
         </div>
@@ -379,8 +388,8 @@
   </div>
 </div>
 
-<script src="../shared/data.js"></script>
-<script src="../shared/common.js"></script>
-<script src="admin.js"></script>
+<script src="../shared/data.js?v=3"></script>
+<script src="../shared/common.js?v=3"></script>
+<script src="admin.js?v=3"></script>
 </body>
 </html>
