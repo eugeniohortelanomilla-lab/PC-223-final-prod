@@ -1,0 +1,13 @@
+<?php
+/**
+ * Copy to config.local.php for local XAMPP development.
+ *
+ * Railway: do NOT use this file. Link MySQL to your web service and use env vars:
+ * MYSQLHOST, MYSQLPORT, MYSQLUSER, MYSQLPASSWORD, MYSQLDATABASE
+ */
+
+$DB_HOST = '127.0.0.1';
+$DB_PORT = 3306;
+$DB_USER = 'root';
+$DB_PASS = '';
+$DB_NAME = 'ctulibrarysystem';

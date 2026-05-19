@@ -7,18 +7,18 @@ ini_set('display_errors', 0);
  */
 function api_send_cors(): void
 {
-    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
-    if (!$origin) {
-        return;
+    $origin  = $_SERVER['HTTP_ORIGIN'] ?? '';
+    $allowed = getenv('CORS_ORIGIN') ?: '*';
+
+    if ($origin && ($allowed === '*' || $origin === $allowed)) {
+        header('Access-Control-Allow-Origin: ' . $origin);
+        header('Vary: Origin');
+    } else {
+        header('Access-Control-Allow-Origin: *');
     }
 
-    $allowed = getenv('CORS_ORIGIN') ?: '*';
-    if ($allowed === '*' || $origin === $allowed) {
-        header('Access-Control-Allow-Origin: ' . ($allowed === '*' ? '*' : $origin));
-        header('Access-Control-Allow-Methods: POST, OPTIONS');
-        header('Access-Control-Allow-Headers: Content-Type');
-        header('Vary: Origin');
-    }
+    header('Access-Control-Allow-Methods: POST, OPTIONS, GET');
+    header('Access-Control-Allow-Headers: Content-Type');
 }
 
 function api_handle_preflight(): void
@@ -47,6 +47,15 @@ header('Content-Type: application/json; charset=utf-8');
 
 if (is_readable(__DIR__ . '/config.local.php')) {
     require __DIR__ . '/config.local.php';
+}
+
+// Support define('DB_HOST', ...) in config.local.php
+if (!isset($DB_HOST) && defined('DB_HOST')) {
+    $DB_HOST = DB_HOST;
+    $DB_USER = defined('DB_USER') ? DB_USER : 'root';
+    $DB_PASS = defined('DB_PASS') ? DB_PASS : '';
+    $DB_NAME = defined('DB_NAME') ? DB_NAME : 'ctulibrarysystem';
+    $DB_PORT = defined('DB_PORT') ? (int) DB_PORT : 3306;
 }
 
 /**
