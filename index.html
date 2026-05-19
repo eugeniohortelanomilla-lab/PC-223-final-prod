@@ -513,6 +513,7 @@
 <div id="toast-container"></div>
 
 <script src="shared/data.js"></script>
+<script src="shared/server.js"></script>
 <script>
 // ============================================================
 // STATE
@@ -571,10 +572,24 @@ function saveBorrowRequests(r) { localStorage.setItem('lib_borrow_requests', JSO
 // ============================================================
 // AUTH
 // ============================================================
-function login() {
+async function login() {
   const u = document.getElementById('l-user').value.trim();
   const p = document.getElementById('l-pass').value;
   document.getElementById('login-err').textContent = '';
+
+  const result = await loginDbUser(u, p);
+  if (result.success && result.user) {
+    const found = result.user;
+    currentUser = found.username;
+    isAdmin = found.role === 'admin';
+    localStorage.setItem('user', JSON.stringify(found));
+    localStorage.setItem('currentUser', currentUser);
+    localStorage.setItem('isAdmin', isAdmin);
+    localStorage.setItem('userId', found.id);
+    startApp();
+    return;
+  }
+
   const users = getUsers();
   const found = users.find(x => x.username === u && x.password === p);
   if (found) {
@@ -586,19 +601,31 @@ function login() {
     localStorage.setItem('userId', found.id);
     startApp();
   } else {
-    document.getElementById('login-err').textContent = 'Invalid username or password.';
+    document.getElementById('login-err').textContent = result.error || 'Invalid username or password.';
   }
 }
-function registerAccount() {
+async function registerAccount() {
   const u = document.getElementById('r-user').value.trim();
   const p = document.getElementById('r-pass').value;
   const n = document.getElementById('r-name').value.trim();
   if (!u || !p || !n) { document.getElementById('reg-err').textContent = 'All fields required.'; return; }
+
+  const response = await createDbUser(u, p, n, 'Student');
+  if (response.success) {
+    toast('Account created and recorded in the database! You can now log in.', 'success');
+    showLoginPage();
+    return;
+  }
+
   const users = getUsers();
-  if (users.find(x => x.username === u)) { document.getElementById('reg-err').textContent = 'Username already taken.'; return; }
+  if (users.find(x => x.username === u)) {
+    document.getElementById('reg-err').textContent = 'Username already taken.';
+    return;
+  }
+
   users.push({id: Date.now(), username: u, password: p, name: n, role: 'Student'});
   saveUsers(users);
-  toast('Account created! You can now log in.', 'success');
+  toast('Account created locally. Database sync is unavailable right now.', 'warning');
   showLoginPage();
 }
 function logout() {
@@ -805,7 +832,6 @@ async function submitBorrowRequest() {
   const date    = document.getElementById('br-date').value;
   const purpose = document.getElementById('br-purpose').value;
 
-  // Validation
   if (!name || !idNum || !bookTitle || !date) {
     toast('Please fill in all required fields.', 'error'); return;
   }
@@ -813,13 +839,33 @@ async function submitBorrowRequest() {
     toast('Please fill in your Course, Year, and Section.', 'error'); return;
   }
 
-  // Check if book exists and is available
   const book = books.find(b => b.title.toLowerCase() === bookTitle.toLowerCase());
   if (!book) {
     toast('Book not found. Please check the title and try again.', 'error'); return;
   }
   if (book.status !== 'Available') {
     toast('Sorry, this book is currently borrowed. Please check back later.', 'error'); return;
+  }
+
+  const borrowRequest = {
+    user_id: parseInt(localStorage.getItem('userId')) || 0,
+    username: currentUser || '',
+    role,
+    name,
+    id_num: idNum,
+    course: role === 'Student' ? course : '',
+    section: role === 'Student' ? section : '',
+    book_title: book.title,
+    book_author: book.author,
+    date_needed: date,
+    purpose
+  };
+
+  const response = await createDbBorrowRequest(borrowRequest);
+  if (!response.success) {
+    toast('Borrow request saved locally, but database sync failed. ' + (response.error || ''), 'warning');
+  } else {
+    toast(`Borrow request for "${book.title}" submitted and recorded in the database!`, 'success');
   }
 
   const borrowRequests = getBorrowRequests();
@@ -842,7 +888,6 @@ async function submitBorrowRequest() {
     returned_at: null
   });
   saveBorrowRequests(borrowRequests);
-  toast(`Borrow request for "${book.title}" submitted! Awaiting librarian approval.`, 'success');
   ['br-name','br-id','br-course','br-section','br-book'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
@@ -1009,7 +1054,7 @@ function updateFacilityInfo() {
   if (limitSubEl) limitSubEl.textContent = f.limitSub;
 }
 
-function submitBooking() {
+async function submitBooking() {
   const facility = document.getElementById('b-facility').value;
   const name = document.getElementById('b-name').value.trim();
   const sid = document.getElementById('b-id').value.trim();
@@ -1018,6 +1063,26 @@ function submitBooking() {
   const pax = document.getElementById('b-pax').value;
   const purpose = document.getElementById('b-purpose').value;
   if (!facility || !name || !sid || !date || !time || !pax) { toast('Please fill in all required fields.', 'error'); return; }
+
+  const bookingData = {
+    user_id: parseInt(localStorage.getItem('userId')) || 0,
+    username: currentUser || '',
+    facility,
+    name,
+    sid,
+    date,
+    time,
+    pax: parseInt(pax, 10),
+    purpose
+  };
+
+  const response = await createDbBooking(bookingData);
+  if (!response.success) {
+    toast('Booking saved locally, but database sync failed. ' + (response.error || ''), 'warning');
+  } else {
+    toast('Booking submitted and recorded in the database! Awaiting librarian confirmation.', 'success');
+  }
+
   const bookings = getBookings();
   bookings.push({
     id: Date.now(),
@@ -1032,7 +1097,6 @@ function submitBooking() {
     status: 'Pending'
   });
   saveBookings(bookings);
-  toast('Booking submitted! Awaiting librarian confirmation.', 'success');
   ['b-name','b-id','b-date','b-time','b-pax'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   renderMyBookings();
 }

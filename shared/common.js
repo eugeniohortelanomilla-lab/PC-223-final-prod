@@ -399,7 +399,7 @@ function updateFacilityInfo() {
   if (limitSubEl) limitSubEl.textContent = f.limitSub;
 }
 
-function submitBooking() {
+async function submitBooking() {
   const facility = document.getElementById('b-facility').value;
   const name    = document.getElementById('b-name').value.trim();
   const sid     = document.getElementById('b-id').value.trim();
@@ -408,10 +408,28 @@ function submitBooking() {
   const pax     = document.getElementById('b-pax').value;
   const purpose = document.getElementById('b-purpose').value;
   if (!facility || !name || !sid || !date || !time || !pax) { toast('Please fill in all required fields.', 'error'); return; }
+
+  const bookingData = {
+    user_id: parseInt(localStorage.getItem('userId')) || 0,
+    username: currentUser || '',
+    facility,
+    name,
+    sid,
+    date,
+    time,
+    pax: parseInt(pax, 10),
+    purpose
+  };
+  const response = await createDbBooking(bookingData);
+  if (!response.success) {
+    toast('Booking saved locally, but database sync failed. ' + (response.error || ''), 'warning');
+  } else {
+    toast('Booking submitted and recorded in the database! Awaiting librarian confirmation.', 'success');
+  }
+
   const bookings = getBookings();
   bookings.push({id: Date.now(), user: currentUser, facility, name, sid, date, time, pax, purpose, status:'Pending'});
   saveBookings(bookings);
-  toast('Booking submitted! Awaiting librarian confirmation.', 'success');
   ['b-facility','b-name','b-id','b-date','b-time','b-pax'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
   renderMyBookings();
 }

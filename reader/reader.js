@@ -20,7 +20,7 @@ function populateBookSuggestions() {
 }
 
 // Submit a borrow request
-function submitBorrowRequest() {
+async function submitBorrowRequest() {
   const role    = document.getElementById('br-role').value;
   const name    = document.getElementById('br-name').value.trim();
   const idNum   = document.getElementById('br-id').value.trim();
@@ -30,7 +30,6 @@ function submitBorrowRequest() {
   const date    = document.getElementById('br-date').value;
   const purpose = document.getElementById('br-purpose').value;
 
-  // Validation
   if (!name || !idNum || !bookTitle || !date) {
     toast('Please fill in all required fields.', 'error'); return;
   }
@@ -38,7 +37,6 @@ function submitBorrowRequest() {
     toast('Please fill in your Course, Year, and Section.', 'error'); return;
   }
 
-  // Check if book exists and is available
   const book = books.find(b => b.title.toLowerCase() === bookTitle.toLowerCase());
   if (!book) {
     toast('Book not found. Please check the title and try again.', 'error'); return;
@@ -47,7 +45,27 @@ function submitBorrowRequest() {
     toast('Sorry, this book is currently borrowed. Please check back later.', 'error'); return;
   }
 
-  // Save request
+  const borrowPayload = {
+    user_id: parseInt(localStorage.getItem('userId')) || 0,
+    username: currentUser || '',
+    role,
+    name,
+    id_num: idNum,
+    course: role === 'Student' ? course : '—',
+    section: role === 'Student' ? section : '—',
+    book_title: book.title,
+    book_author: book.author,
+    date_needed: date,
+    purpose
+  };
+
+  const response = await createDbBorrowRequest(borrowPayload);
+  if (!response.success) {
+    toast('Borrow request saved locally, but database sync failed. ' + (response.error || ''), 'warning');
+  } else {
+    toast(`Borrow request for "${book.title}" submitted and recorded in the database!`, 'success');
+  }
+
   const requests = getBorrowRequests();
   requests.push({
     id: Date.now(),
@@ -66,12 +84,8 @@ function submitBorrowRequest() {
   });
   saveBorrowRequests(requests);
 
-  // Notify admin
   localStorage.setItem('notif_admin', `📖 New borrow request: "${book.title}" by ${name}`);
 
-  toast(`Borrow request for "${book.title}" submitted! Awaiting librarian approval.`, 'success');
-
-  // Clear form
   ['br-name','br-id','br-course','br-section','br-book'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
