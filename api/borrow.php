@@ -2,12 +2,7 @@
 error_reporting(0);
 ini_set('display_errors', 0);
 require_once 'config.php';
-
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'error' => 'Method not allowed']);
-    exit;
-}
+api_require_post();
 
 $data       = json_decode(file_get_contents('php://input'), true);
 $userId     = intval($data['user_id']     ?? 0);

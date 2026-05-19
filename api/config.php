@@ -1,6 +1,48 @@
 <?php
 error_reporting(0);
 ini_set('display_errors', 0);
+
+/**
+ * CORS + OPTIONS preflight (must run before DB connect and before POST checks).
+ */
+function api_send_cors(): void
+{
+    $origin = $_SERVER['HTTP_ORIGIN'] ?? '';
+    if (!$origin) {
+        return;
+    }
+
+    $allowed = getenv('CORS_ORIGIN') ?: '*';
+    if ($allowed === '*' || $origin === $allowed) {
+        header('Access-Control-Allow-Origin: ' . ($allowed === '*' ? '*' : $origin));
+        header('Access-Control-Allow-Methods: POST, OPTIONS');
+        header('Access-Control-Allow-Headers: Content-Type');
+        header('Vary: Origin');
+    }
+}
+
+function api_handle_preflight(): void
+{
+    api_send_cors();
+    if (($_SERVER['REQUEST_METHOD'] ?? '') === 'OPTIONS') {
+        http_response_code(204);
+        exit;
+    }
+}
+
+function api_require_post(): void
+{
+    $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+    if ($method !== 'POST') {
+        http_response_code(405);
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+        exit;
+    }
+}
+
+api_handle_preflight();
+
 header('Content-Type: application/json; charset=utf-8');
 
 if (is_readable(__DIR__ . '/config.local.php')) {

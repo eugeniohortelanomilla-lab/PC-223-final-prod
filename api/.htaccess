@@ -1,0 +1,4 @@
+# Ensure Apache passes POST body to PHP scripts
+<IfModule mod_rewrite.c>
+  RewriteEngine Off
+</IfModule>

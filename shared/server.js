@@ -1,14 +1,28 @@
+function getApiBase() {
+  const path = window.location.pathname;
+  if (path.includes('/admin/') || path.includes('/reader/')) {
+    return new URL('../api/', window.location.href).href;
+  }
+  return new URL('api/', window.location.href).href;
+}
+
 async function apiPost(endpoint, payload) {
-  const base = window.location.pathname.includes('/admin/') || window.location.pathname.includes('/reader/') ? '../api/' : 'api/';
+  const url = new URL(endpoint, getApiBase()).href;
   try {
-    const response = await fetch(base + endpoint, {
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      redirect: 'follow'
     });
     if (!response.ok) {
       const text = await response.text();
-      return { success: false, error: `Server error ${response.status}: ${text}` };
+      let message = text;
+      try {
+        const json = JSON.parse(text);
+        if (json.error) message = json.error;
+      } catch (_) { /* not JSON */ }
+      return { success: false, error: `Server error ${response.status}: ${message}` };
     }
     return await response.json();
   } catch (error) {
