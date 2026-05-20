@@ -12,6 +12,7 @@ $apiScripts = [
     '/api/register.php' => __DIR__ . '/api/register.php',
     '/api/borrow.php'   => __DIR__ . '/api/borrow.php',
     '/api/booking.php'  => __DIR__ . '/api/booking.php',
+    '/api/admin.php'    => __DIR__ . '/api/admin.php',
 ];
 
 if (isset($apiScripts[$path])) {

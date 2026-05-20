@@ -3,6 +3,48 @@
 // ============================================================
 
 let activeBorrowFilter = 'All';
+let dbBorrowRequests = [];
+let dbBookings = [];
+
+function normalizeBorrowRecord(r) {
+  return {
+    ...r,
+    id_num: r.id_num ?? r.idNum ?? '',
+    book_title: r.book_title ?? r.bookTitle ?? '',
+    book_author: r.book_author ?? r.bookAuthor ?? '',
+    date_needed: r.date_needed ?? r.date ?? '',
+    submitted_at: r.submitted_at ?? r.submittedAt ?? '',
+    approved_at: r.approved_at ?? null,
+    returned_at: r.returned_at ?? r.returnedAt ?? null,
+    rejection_reason: r.rejection_reason ?? '',
+    user: r.user ?? r.username ?? ''
+  };
+}
+
+function getAdminBorrowRequests() {
+  return dbBorrowRequests.length ? dbBorrowRequests : getBorrowRequests().map(normalizeBorrowRecord);
+}
+
+function getAdminBookings() {
+  return dbBookings.length ? dbBookings : getBookings();
+}
+
+async function syncAdminDataFromDb() {
+  const [borrowRes, bookingRes] = await Promise.all([
+    fetchDbBorrowRequests(),
+    fetchDbBookings()
+  ]);
+
+  if (borrowRes.success && Array.isArray(borrowRes.data)) {
+    dbBorrowRequests = borrowRes.data.map(normalizeBorrowRecord);
+  }
+  if (bookingRes.success && Array.isArray(bookingRes.data)) {
+    dbBookings = bookingRes.data.map(b => ({
+      ...b,
+      time: b.time_slot ?? b.time ?? ''
+    }));
+  }
+}
 
 function setBorrowFilter(filter, btn) {
   activeBorrowFilter = filter;
@@ -15,7 +57,7 @@ function renderBorrowersPage() {
   updateBorrowStats();
 
   const search = (document.getElementById('borrow-search')?.value || '').toLowerCase();
-  let requests = getBorrowRequests();
+  let requests = getAdminBorrowRequests();
 
   // Filter by status
   if (activeBorrowFilter !== 'All') {
@@ -93,7 +135,7 @@ function renderBorrowersPage() {
 }
 
 function updateBorrowStats() {
-  const all = getBorrowRequests();
+  const all = getAdminBorrowRequests();
   const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
   el('br-stat-pending',  all.filter(r => r.status === 'Pending').length);
   el('br-stat-active',   all.filter(r => r.status === 'Approved').length);
@@ -101,44 +143,59 @@ function updateBorrowStats() {
   el('br-stat-total',    all.length);
 }
 
-function approveBorrow(id) {
-  const requests = getBorrowRequests();
-  const request = requests.find(r => r.id === id);
+async function approveBorrow(id) {
+  const res = await updateDbBorrowStatus(id, 'Approved');
+  if (!res.success) {
+    toast('Unable to approve request in database.', 'error');
+    return;
+  }
+  const requests = getAdminBorrowRequests();
+  const request = requests.find(r => Number(r.id) === Number(id));
   if (!request) return;
   request.status = 'Approved';
   request.approved_at = new Date().toLocaleString();
   const book = books.find(b => b.title === request.book_title);
   if (book) book.status = 'Borrowed';
-  saveBorrowRequests(requests);
+  dbBorrowRequests = requests;
   saveBooks();
   toast('Borrow request approved.', 'success');
   renderBorrowersPage();
   updateBorrowStats();
 }
 
-function rejectBorrow(id) {
+async function rejectBorrow(id) {
   const reason = prompt(`Reason for rejecting the request?`, 'Book is currently unavailable.');
   if (reason === null) return;
-  const requests = getBorrowRequests();
-  const request = requests.find(r => r.id === id);
+  const res = await updateDbBorrowStatus(id, 'Rejected', reason);
+  if (!res.success) {
+    toast('Unable to reject request in database.', 'error');
+    return;
+  }
+  const requests = getAdminBorrowRequests();
+  const request = requests.find(r => Number(r.id) === Number(id));
   if (!request) return;
   request.status = 'Rejected';
   request.rejection_reason = reason;
-  saveBorrowRequests(requests);
+  dbBorrowRequests = requests;
   toast('Borrow request rejected.', 'info');
   renderBorrowersPage();
   updateBorrowStats();
 }
 
-function markReturned(id) {
-  const requests = getBorrowRequests();
-  const request = requests.find(r => r.id === id);
+async function markReturned(id) {
+  const res = await updateDbBorrowStatus(id, 'Returned');
+  if (!res.success) {
+    toast('Unable to mark returned in database.', 'error');
+    return;
+  }
+  const requests = getAdminBorrowRequests();
+  const request = requests.find(r => Number(r.id) === Number(id));
   if (!request) return;
   request.status = 'Returned';
   request.returned_at = new Date().toLocaleString();
   const book = books.find(b => b.title === request.book_title);
   if (book) book.status = 'Available';
-  saveBorrowRequests(requests);
+  dbBorrowRequests = requests;
   saveBooks();
   toast('Book marked as returned.', 'success');
   renderBorrowersPage();
@@ -251,7 +308,7 @@ function renderAdminDonations() {
 function renderAdminBookings() {
   const list = document.getElementById('admin-bookings-list');
   if (!list) return;
-  const bookings = getBookings();
+  const bookings = getAdminBookings();
   if (!bookings.length) { list.innerHTML = '<p style="color:rgba(240,236,228,.35);font-size:.85rem;">No bookings yet.</p>'; return; }
   list.innerHTML = bookings.map(b => `
     <div class="pending-card">
@@ -263,17 +320,29 @@ function renderAdminBookings() {
     </div>`).join('');
 }
 
-function confirmBooking(id) {
-  let bookings = getBookings();
-  const b = bookings.find(x => x.id === id);
+async function confirmBooking(id) {
+  const res = await updateDbBookingStatus(id, 'Confirmed');
+  if (!res.success) {
+    toast('Unable to confirm booking in database.', 'error');
+    return;
+  }
+  let bookings = getAdminBookings();
+  const b = bookings.find(x => Number(x.id) === Number(id));
   if (b) { b.status = 'Confirmed'; if (b.user) localStorage.setItem(`notif_${b.user}`, `✅ Your ${b.facility || 'Graduate Room'} booking on ${b.date} (${b.time}) has been confirmed!`); }
-  saveBookings(bookings); renderAdminBookings();
+  dbBookings = bookings;
+  renderAdminBookings();
   toast('Booking confirmed.', 'success');
 }
 
-function deleteBooking(id) {
-  let bookings = getBookings().filter(b => b.id !== id);
-  saveBookings(bookings); renderAdminBookings();
+async function deleteBooking(id) {
+  const res = await deleteDbBooking(id);
+  if (!res.success) {
+    toast('Unable to delete booking in database.', 'error');
+    return;
+  }
+  let bookings = getAdminBookings().filter(b => Number(b.id) !== Number(id));
+  dbBookings = bookings;
+  renderAdminBookings();
   toast('Booking deleted.', 'info');
 }
 
@@ -284,8 +353,8 @@ function renderAdminStats() {
   const borrowed   = books.filter(b => b.status === 'Borrowed').length;
   const pending    = getPending().length;
   const donations  = getDonations().filter(d => d.status === 'Pending').length;
-  const bookings   = getBookings().length;
-  const borrowReqs = getBorrowRequests().filter(r => r.status === 'Pending').length;
+  const bookings   = getAdminBookings().length;
+  const borrowReqs = getAdminBorrowRequests().filter(r => r.status === 'Pending').length;
   el.innerHTML = [
     ['📚 Total Books', books.length],
     ['✅ Available', available],
@@ -305,7 +374,7 @@ function renderAdminStats() {
 function renderAdminBorrowerLog() {
   const el = document.getElementById('admin-borrowers-log');
   if (!el) return;
-  const requests = getBorrowRequests().slice().sort((a,b) => b.id - a.id).slice(0, 6);
+  const requests = getAdminBorrowRequests().slice().sort((a,b) => b.id - a.id).slice(0, 6);
   if (!requests.length) {
     el.innerHTML = '<p style="font-size:.85rem;color:rgba(240,236,228,.4);">No borrow logs yet.</p>';
     return;
@@ -333,8 +402,8 @@ function renderAdminBorrowerLog() {
 // BORROWER MODAL
 // ============================================================
 function openBorrowerModal(id) {
-  const requests = getBorrowRequests();
-  const r = requests.find(x => x.id === id);
+  const requests = getAdminBorrowRequests();
+  const r = requests.find(x => Number(x.id) === Number(id));
   if (!r) return;
 
   document.getElementById('bm-book').textContent = r.book_title;
@@ -371,17 +440,20 @@ isAdmin = localStorage.getItem('isAdmin') === 'true';
 if (!currentUser || !isAdmin) {
   window.location.href = '../index.html';
 } else {
-  loadState();
-  document.getElementById('app').classList.add('active');
-  document.getElementById('nav-username').textContent = currentUser;
-  switchPage('library');
-  renderHours();
-  renderLibrarians();
-  renderChess();
-  checkNotifications();
-  renderAdminLibSelect();
-  renderAdminStats();
+  (async () => {
+    loadState();
+    await syncAdminDataFromDb();
+    document.getElementById('app').classList.add('active');
+    document.getElementById('nav-username').textContent = currentUser;
+    switchPage('library');
+    renderHours();
+    renderLibrarians();
+    renderChess();
+    checkNotifications();
+    renderAdminLibSelect();
+    renderAdminStats();
 
-  const bDate = document.getElementById('b-date');
-  if (bDate) bDate.min = new Date().toISOString().split('T')[0];
+    const bDate = document.getElementById('b-date');
+    if (bDate) bDate.min = new Date().toISOString().split('T')[0];
+  })();
 }

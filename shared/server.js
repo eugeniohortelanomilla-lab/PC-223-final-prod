@@ -59,3 +59,47 @@ function createDbBorrowRequest(data) {
 function createDbBooking(data) {
   return apiPost('booking.php', data);
 }
+
+async function apiGet(endpoint, params = {}) {
+  const url = new URL(endpoint, getApiBase());
+  Object.entries(params).forEach(([key, value]) => url.searchParams.set(key, value));
+  try {
+    const response = await fetch(url.href, { method: 'GET', mode: 'cors' });
+    const text = await response.text();
+    if (!response.ok) {
+      return { success: false, error: `Server error ${response.status}: ${text}` };
+    }
+    try {
+      return JSON.parse(text);
+    } catch (_) {
+      return { success: false, error: 'Invalid JSON from server: ' + text.slice(0, 120) };
+    }
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+function fetchDbBorrowRequests() {
+  return apiGet('admin.php', { type: 'borrow_requests' });
+}
+
+function fetchDbBookings() {
+  return apiGet('admin.php', { type: 'bookings' });
+}
+
+function updateDbBorrowStatus(id, status, rejectionReason = '') {
+  return apiPost('admin.php', {
+    action: 'borrow_status',
+    id,
+    status,
+    rejection_reason: rejectionReason
+  });
+}
+
+function updateDbBookingStatus(id, status) {
+  return apiPost('admin.php', { action: 'booking_status', id, status });
+}
+
+function deleteDbBooking(id) {
+  return apiPost('admin.php', { action: 'booking_delete', id });
+}
